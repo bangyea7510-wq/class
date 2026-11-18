@@ -201,8 +201,9 @@ input:focus-visible,textarea:focus-visible{outline:3px solid var(--pop);outline-
     <div id="certBox"><p class="wait">특허증 만드는 중…</p></div>
     <div class="row">
       <button class="btn" id="save" type="button">이미지 저장</button>
-      <button class="btn ghost" id="closeCert" type="button">닫기</button>
+      <button class="btn ghost" id="closeCert" type="button">처음으로</button>
     </div>
+    <p class="hint" id="saveMsg" style="color:#FFD23F;font-weight:700;font-size:15px" aria-live="polite"></p>
     <p class="hint">저장 버튼이 안 되면 <b>특허증 그림을 길게 꾹</b> 눌러<br>'사진에 저장' 또는 '이미지 다운로드'를 고르세요.</p>
   </div>
 </div>
@@ -245,6 +246,53 @@ const sfx={
   done(){ tone(988,.1,{type:'triangle',vol:.12}); tone(1319,.25,{type:'triangle',vol:.12,at:.1}); },
   back(){ tone(700,.07,{to:420,vol:.06}); }
 };
+/* ---------- 배경음악: 발명가 공방 느낌의 통통 튀는 루프 (직접 합성) ---------- */
+const BGM={on:false,timer:null,step:0,next:0,bus:null};
+const EIGHTH=60/138/2;
+const MEL=[
+  [72,0,76,79, 0,76,72,0],
+  [71,0,74,77, 76,74,71,0],
+  [69,0,72,73, 74,0,77,0],
+  [79,77,76,74, 71,0,72,0],
+  [72,0,76,79, 0,84,81,0],
+  [79,0,77,76, 74,0,71,0],
+  [69,72,77,0, 76,0,74,73],
+  [74,0,71,67, 72,0,0,0]
+];
+const HARM=[[48,55,[64,67,72]],[43,50,[65,71,74]],[41,48,[65,69,72]],[43,50,[65,71,74]],
+            [48,55,[64,67,72]],[43,50,[65,71,74]],[41,48,[65,69,72]],[43,48,[64,67,72]]];
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function bnote(m,t,dur,type,vol){
+  const c=AC,o=c.createOscillator(),g=c.createGain();
+  o.type=type;o.frequency.setValueAtTime(mtof(m),t);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.008);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(BGM.bus);o.start(t);o.stop(t+dur+.02);
+}
+function bgmPlay(step,t){
+  const bar=Math.floor(step/8)%8,i=step%8,h=HARM[bar],m=MEL[bar][i];
+  if(m) bnote(m,t,.16,'square',.05);
+  if(i===0) bnote(h[0],t,.22,'triangle',.5);
+  if(i===4) bnote(h[1],t,.22,'triangle',.5);
+  if(i===2||i===6) h[2].forEach(n=>bnote(n,t,.08,'triangle',.07));
+}
+function bgmSched(){
+  if(!AC||!BGM.on) return;
+  while(BGM.next<AC.currentTime+.3){bgmPlay(BGM.step,BGM.next);BGM.next+=EIGHTH;BGM.step=(BGM.step+1)%64;}
+}
+function bgmStart(){
+  if(BGM.on||muted) return;
+  const c=ac(); if(!c) return;
+  if(!BGM.bus){BGM.bus=c.createGain();BGM.bus.gain.value=.22;BGM.bus.connect(c.destination);}
+  BGM.on=true;BGM.next=c.currentTime+.15;BGM.timer=setInterval(bgmSched,50);
+}
+function bgmStop(){BGM.on=false;clearInterval(BGM.timer);}
+document.addEventListener('pointerdown',()=>bgmStart(),true);
+document.addEventListener('keydown',()=>bgmStart(),true);
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){bgmStop();}
+  else if(!muted&&AC){BGM.next=AC.currentTime+.15;bgmStart();}
+});
 const SPK_ON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#1A1A1A"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/></svg>';
 const SPK_OFF='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#1A1A1A"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/></svg>';
 function paintMute(){
@@ -252,7 +300,7 @@ function paintMute(){
     b.innerHTML=(muted?SPK_OFF:SPK_ON)+(muted?'소리 꺼짐':'소리 켜짐');
     b.setAttribute('aria-pressed',muted);});
 }
-function toggleMute(){ muted=!muted; try{localStorage.setItem('hapche-muted',muted?'1':'0');}catch(e){} paintMute(); if(!muted) sfx.pick(); }
+function toggleMute(){ muted=!muted; try{localStorage.setItem('hapche-muted',muted?'1':'0');}catch(e){} paintMute(); if(muted) bgmStop(); else { sfx.pick(); bgmStart(); } }
 
 /* ---------- 목록 아이콘 ---------- */
 const S='stroke="#1A1A1A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
@@ -655,7 +703,7 @@ $('done').addEventListener('click',async()=>{
   note.textContent='완성! 특허증이 나왔어요.';
   sfx.done();
   certBlob=null;
-  $('certBox').innerHTML='<p class="wait">특허증 만드는 중…</p>';
+  $('certBox').innerHTML='<p class="wait">특허증 만드는 중…</p>';$('saveMsg').textContent='';
   $('cert').hidden=false;document.body.style.overflow='hidden';
   const c=await makeCert(a,b,name,desc,who);
   const url=c.toDataURL('image/png');
@@ -664,20 +712,22 @@ $('done').addEventListener('click',async()=>{
   c.toBlob(bl=>{certBlob=bl;},'image/png');
 });
 $('save').addEventListener('click',()=>{
-  if(!certBlob){return;}
-  const file=new File([certBlob],certName,{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'합체 발명 특허증'}).catch(err=>{if(err.name!=='AbortError')download();});
-    return;
-  }
-  download();
-  function download(){
-    const u=URL.createObjectURL(certBlob),l=document.createElement('a');
-    l.href=u;l.download=certName;document.body.appendChild(l);l.click();l.remove();
-    setTimeout(()=>URL.revokeObjectURL(u),4000);
-  }
+  if(!certBlob) return;
+  const u=URL.createObjectURL(certBlob),l=document.createElement('a');
+  l.href=u;l.download=certName;document.body.appendChild(l);l.click();l.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),10000);
+  sfx.done();
+  $('saveMsg').textContent='저장했어요! 갤러리의 다운로드(Download) 폴더에서 확인하세요.';
 });
-$('closeCert').addEventListener('click',()=>{$('cert').hidden=true;document.body.style.overflow='';});
+$('closeCert').addEventListener('click',()=>{
+  $('cert').hidden=true;document.body.style.overflow='';
+  sfx.back();
+  selA=null;selB=null;mark('A');mark('B');
+  $('pname').value='';$('pdesc').value='';
+  $('out').hidden=true;$('pick').hidden=false;$('dock').hidden=false;
+  $('stage').innerHTML='';
+  renderDock();window.scrollTo(0,0);
+});
 $('back').addEventListener('click',()=>{
   sfx.back();
   $('out').hidden=true; $('pick').hidden=false; $('dock').hidden=false;
