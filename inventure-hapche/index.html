@@ -110,6 +110,16 @@ input:focus-visible,textarea:focus-visible{outline:3px solid var(--pop);outline-
 .card .cs{font-size:13px;color:#CFC6AE}
 .note{margin:0;font-size:13px;color:var(--muted);text-align:center}
 
+/* 시작 화면 */
+.intro{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center;
+  background-color:var(--paper);background-image:radial-gradient(rgba(26,26,26,.09) 1.2px,transparent 1.3px);background-size:12px 12px;transition:opacity .35s}
+.intro.bye{opacity:0;pointer-events:none}
+.intro h1{font-size:clamp(46px,14vw,72px)}
+.intro .sub{margin:0;font-size:16px;color:var(--muted);line-height:1.5}
+.intro .startbtn{min-height:76px;padding:0 34px;border:4px solid var(--ink);border-radius:18px;background:var(--a);color:#fff;font:400 32px var(--display);cursor:pointer;box-shadow:6px 6px 0 var(--ink);animation:nudge 1.2s ease-in-out infinite}
+.intro .startbtn:active{transform:translate(3px,3px);box-shadow:3px 3px 0 var(--ink)}
+.intro small{font-size:13px;color:var(--muted)}
+
 /* 특허증 오버레이 */
 .cert{position:fixed;inset:0;z-index:20;background:#0B1F3A;overflow:auto;-webkit-overflow-scrolling:touch}
 .cert-in{max-width:520px;margin:0 auto;padding:18px 16px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;align-items:stretch}
@@ -132,6 +142,13 @@ input:focus-visible,textarea:focus-visible{outline:3px solid var(--pop);outline-
 </style>
 </head>
 <body>
+<div class="intro" id="intro">
+  <span class="eyebrow">인벤처AI 몸풀기 게임</span>
+  <h1>합체 발명소</h1>
+  <p class="sub">물건 + 기술을 합쳐서<br>나만의 발명품 특허를 따 보자!</p>
+  <button class="startbtn" id="start" type="button">발명 시작!</button>
+  <small>소리가 나요 · 위쪽 버튼으로 끌 수 있어요</small>
+</div>
 <!-- 1화면: 고르기 -->
 <div class="wrap" id="pick">
   <header>
@@ -785,6 +802,12 @@ $('back').addEventListener('click',()=>{
 $('mute').addEventListener('click',toggleMute);
 $('mute2').addEventListener('click',toggleMute);
 
+$('start').addEventListener('click',()=>{
+  bgmStart();
+  if(!muted){ [72,76,79,84].forEach((m,i)=>tone(mtof(m),.18,{type:'triangle',vol:.1,at:i*.08})); }
+  $('intro').classList.add('bye');
+  setTimeout(()=>$('intro').hidden=true,400);
+});
 buildList($('listA'),A,'A');
 buildList($('listB'),B,'B');
 paintMute(); renderDock();
