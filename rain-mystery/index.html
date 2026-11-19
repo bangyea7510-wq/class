@@ -1,0 +1,896 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>빗소리에 묻힌 비명</title><style>:root{--bg:#06080c;--panel:#0d1118;--line:#252d3b;--tx:#cdd5e3;--dim:#7d8aa0;--blood:#b3202c;--lamp:#ffd98a;--cold:#7fa6d6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans KR","Malgun Gothic",sans-serif;min-height:100%}
+.serif{font-family:"Noto Serif KR","Nanum Myeongjo","Batang",serif}
+#rain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
+#flash{position:fixed;inset:0;background:#d6e4ff;opacity:0;pointer-events:none;z-index:60}
+#flash.go{animation:fl 1s ease-out}#flash.soft{animation:fls 1.2s ease-out}
+@keyframes fl{0%{opacity:0}6%{opacity:.85}14%{opacity:.1}22%{opacity:.7}100%{opacity:0}}
+@keyframes fls{0%{opacity:0}15%{opacity:.09}100%{opacity:0}}
+#app{position:relative;z-index:2;max-width:1320px;margin:0 auto;padding:10px 14px 24px}
+#top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0 10px}
+#top h1{font-size:18px;margin:0;color:#e9d9c2;letter-spacing:.06em}#top h1 span{color:var(--blood)}
+#chtag{color:var(--dim);font-size:13px}
+.sp{flex:1}
+button,select,input{font:inherit}
+.btn{background:#161c27;color:var(--tx);border:1px solid #2f394b;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--lamp);color:#fff}.btn.pri{background:#4b0f16;border-color:#7d1b26}.btn.pri:hover{background:#6a1620}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.sm{padding:4px 9px;font-size:12px}
+#main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px}
+@media(max-width:980px){#main{grid-template-columns:1fr}}
+#stagebox{position:relative}
+#stage{position:relative;aspect-ratio:16/9;overflow:hidden;border:1px solid #222a38;border-radius:10px;background:#000;touch-action:none;cursor:none}
+#stage svg.scn{position:absolute;inset:0;width:100%;height:100%}
+#dark{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle var(--r,150px) at var(--mx,50%) var(--my,50%),rgba(0,0,0,0) 0%,rgba(0,0,0,.22) 55%,rgba(0,0,0,var(--dk,.95)) 100%)}
+#stage.lum #dark{background:transparent}
+#stage.lum svg.scn>*:not(#lumlayer){filter:brightness(.16) saturate(.7)}
+#stage.assist{--dk:.55}
+#vig{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px 40px #000}
+#beam{position:absolute;width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,217,138,.5);transform:translate(-50%,-50%);pointer-events:none;left:var(--mx);top:var(--my)}
+#stage.lum #beam{border-color:rgba(120,170,255,.6)}
+.scn #hots circle.h{fill:rgba(255,217,138,.01);stroke:rgba(255,230,160,.28);stroke-dasharray:3 4;cursor:pointer}
+.scn #hots circle.h:hover{stroke:rgba(255,230,160,.9)}
+#lumlayer{display:none}
+#stage.lum #lumlayer{display:block}
+#stage.lum #lumlayer .lg{fill:#5aa8ff;stroke:#9fd0ff;filter:drop-shadow(0 0 9px #4d9bff) brightness(1.4);opacity:1;animation:lumpulse 2.4s ease-in-out infinite;cursor:pointer}
+#stage.lum.fade #lumlayer .lg{opacity:.18;animation:none}
+@keyframes lumpulse{50%{opacity:.6}}
+.rs{animation:rsf 1.1s linear infinite}@keyframes rsf{0%{opacity:.1}50%{opacity:.55}100%{opacity:.1}}
+.sway{transform-origin:690px 40px;animation:sway 5s ease-in-out infinite}@keyframes sway{50%{transform:rotate(1.6deg)}}
+#bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+#lumstat{color:var(--cold);font-size:12px;min-width:90px}
+#side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;align-self:start}
+#side h3{margin:0 0 6px;font-size:14px;color:var(--lamp)}
+.task{display:flex;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px dashed #1d2431;color:var(--dim)}
+.task.ok{color:#9fe0b0}.task .c{width:16px;flex:none}
+#logbox{font-size:12.5px;color:var(--dim);line-height:1.6;max-height:150px;overflow:auto}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1a2130;border:1px solid #3a4660;padding:9px 16px;border-radius:20px;font-size:13px;z-index:70;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.on{opacity:1}
+.mb{position:fixed;inset:0;background:rgba(2,3,6,.82);display:flex;align-items:center;justify-content:center;z-index:40;padding:10px}
+.md{width:min(940px,100%);max-height:92vh;overflow:auto;background:#0d1118;border:1px solid #2a3140;border-radius:12px;padding:20px 22px;box-shadow:0 0 60px #000}
+.md.story{width:min(720px,100%);background:#07090d;border-color:#3a1218;text-align:left}
+.md h2{margin:0 0 10px;font-size:19px;color:#f0dcc0}.md h3{margin:14px 0 6px;font-size:15px;color:var(--lamp)}
+.md p{line-height:1.75;font-size:14.5px;margin:8px 0}
+.story p{font-size:16.5px;line-height:2;color:#d8cdbb}
+.story h2{color:#c8434f;font-size:22px;letter-spacing:.08em}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:8px 0}
+th,td{border:1px solid #232b3a;padding:6px 8px;text-align:left;vertical-align:top}th{background:#121824;color:var(--lamp)}
+.grid{display:grid;gap:10px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:700px){.g2,.g3,.g5{grid-template-columns:1fr 1fr}}
+.card{background:#10151e;border:1px solid #232b3a;border-radius:8px;padding:10px;text-align:center;font-size:12.5px}
+.card.sel{border-color:var(--lamp)}
+.card svg{max-width:100%;height:auto}
+.note{font-size:12.5px;color:var(--dim);line-height:1.6}
+.ok{color:#9fe0b0}.bad{color:#ff8b95}
+select,input[type=text],input[type=number]{background:#0a0e15;color:var(--tx);border:1px solid #2f394b;border-radius:6px;padding:5px 8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.ev{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid #232b3a;border-radius:8px;margin:5px 0;cursor:pointer;font-size:13px}
+.ev.sel{border-color:var(--lamp);background:#1a1710}
+.tab{display:inline-block;padding:6px 12px;border:1px solid #2f394b;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;margin-right:3px}
+.tab.on{background:#161d2a;color:var(--lamp)}
+#gate{position:fixed;inset:0;z-index:80;background:radial-gradient(ellipse at 50% 30%,#14070b,#030406 70%);display:flex;align-items:center;justify-content:center;text-align:center;padding:20px}
+#gate h1{font-size:clamp(34px,7vw,74px);margin:0 0 6px;color:#d9d0c0;letter-spacing:.12em;text-shadow:0 0 22px #6a0f18;animation:flick 6s infinite}
+@keyframes flick{0%,92%,100%{opacity:1}93%{opacity:.4}94%{opacity:1}96%{opacity:.55}}
+#gate p{max-width:560px;margin:8px auto;color:#9aa5b8;line-height:1.8}
+.sub{color:#c8434f;letter-spacing:.3em;font-size:13px}
+.opts{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:16px 0;font-size:13px;color:#aab4c6}
+.ok-badge{display:inline-block;background:#12301c;color:#9fe0b0;border-radius:10px;padding:1px 8px;font-size:11px}
+.tl td.hl{background:#2a1115;color:#ffb3ba}
+.sus{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #232b3a;border-radius:8px;margin:5px 0;cursor:pointer}
+.sus.on{border-color:var(--lamp)}.sus.done::after{content:"진술 확보";margin-left:auto;font-size:11px;color:#9fe0b0}
+.speech{background:#0a0e15;border-left:3px solid var(--blood);padding:10px 14px;min-height:90px;line-height:1.8;font-size:14.5px}
+#tpanel .md{border-color:#7d1b26}
+.refs li{margin:6px 0;line-height:1.6;font-size:13px}.refs a{color:var(--cold);word-break:break-all}
+@media(prefers-reduced-motion:reduce){#gate h1{animation:none}.rs,.sway{animation:none}}
+.xb{position:sticky;top:0;float:right;z-index:3;background:#3a1218;color:#fff;border:1px solid #7d1b26;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;margin:0 0 6px 10px}.xb:hover{background:#5a1a24}
+#stage.lights #dark,#stage.lights #vig{display:none}
+#stage.lights{cursor:default}#stage.lights #beam{display:none}
+#stage.lights .scn #hots circle.h{stroke:rgba(255,230,160,.8)}
+</style></head><body>
+<canvas id="rain"></canvas><div id="flash"></div><div id="toast"></div>
+<div id="gate"><div><div class="sub">고등학생 대상 과학수사 추리 · 약 30~40분</div><h1 class="serif">빗소리에 묻힌 비명</h1><p class="serif">장마 사흘째 밤, 산중 별장 운해재의 서재에서 한 사람이 죽었다. 목격자는 없고, 모두가 알리바이를 갖고 있다. 모두가 그것을 믿고 있다.</p>
+<p style="font-size:13px">손전등으로 어둠을 비추며 단서를 찾고, 혈흔·족적·지문·섬유·약물·디지털 기록으로 범인을 가려내라. 힌트는 게임 전체에서 단 5번.<br>※ 허구의 사건이며 직접적인 묘사는 최소화했다. 소리가 납니다.</p>
+<div class="opts"><label><input type="checkbox" id="o_snd" checked> 사운드</label><label><input type="checkbox" id="o_soft"> 번쩍임 줄이기</label><label><input type="checkbox" id="o_assist"> 밝기 보조</label></div>
+<button class="btn pri" style="font-size:16px;padding:12px 30px" onclick="G.start()">수사 시작</button></div></div>
+<div id="app" style="visibility:hidden"><div id="top"><h1 class="serif">빗소리에 묻힌 <span>비명</span></h1><span id="chtag"></span><span class="sp"></span>
+<button class="btn" onclick="G.hint()">힌트 (남음 <b id="hc">5</b>/5)</button><button class="btn" onclick="G.chmenu()">장 이동</button><button class="btn" onclick="G.notes()">수첩 (<span id="nbc">0</span>)</button><button class="btn" id="snd">소리 끄기</button><input type="range" id="vol" min="0" max="1" step=".05" value=".7" title="볼륨"><button class="btn" id="softb">번쩍임 감소</button><button class="btn" id="lightb" onclick="G.light()">불 켜기</button><button class="btn" id="assb">밝기 보조</button><button class="btn" onclick="G.refs()">출처</button></div>
+<div id="main"><div id="stagebox"><div id="stage"><div id="dark"></div><div id="vig"></div><div id="beam"></div></div>
+<div id="bar"><span id="nav"><button class="btn" data-loc="lobby" onclick="G.go('lobby')">로비</button> <button class="btn" data-loc="hall" onclick="G.go('hall')">복도</button> <button class="btn" data-loc="study" onclick="G.go('study')">서재</button> <button class="btn" data-loc="kitchen" onclick="G.go('kitchen')">주방</button></span><span class="sp"></span><span id="lumstat"></span><button class="btn" id="lumbtn" onclick="G.lum()">루미놀 분사 (암실)</button><button class="btn" onclick="G.interview()">진술 청취</button></div>
+<p class="note">손전등(포인터)을 움직여 어두운 장면을 비추고, 점선이 보이는 곳을 눌러 조사한다. T 키: 교사용 해설.</p></div>
+<div id="side"><div><h3>이번 장의 과제</h3><div id="tasks"></div></div><div><h3>힌트 기록</h3><div id="logbox"></div></div></div></div></div>
+<script>const REFS=[
+['Ayers, R., Brothers, S., & Jansen, W. (2014). <i>Guidelines on mobile device forensics</i> (NIST Special Publication 800-101 Rev. 1). National Institute of Standards and Technology. https://doi.org/10.6028/NIST.SP.800-101r1','https://csrc.nist.gov/pubs/sp/800/101/r1/final','디지털 증거: 기기 시각을 기준 시각과 대조·기록'],
+['Federal Bureau of Investigation Laboratory. (2024). <i>Forensic fiber examinations</i> (HRFBR-405-07). https://fbilabqsd.fbi.gov/file-repository/trace-evidence/hrfbr-405-07-forensic-fiber-examinations.pdf','https://fbilabqsd.fbi.gov/file-repository/trace-evidence/hrfbr-405-07-forensic-fiber-examinations.pdf','섬유 비교: 색·단면·종류'],
+['Forensic Chemistry Section, Maine State Police. (2022). <i>Bloodstain pattern analysis and interpretation method</i> (FC-M002, Rev. 1.3). https://www.maine.gov/dps/msp/sites/maine.gov.dps.msp/files/inline-files/Bloodstain%20Pattern%20Analysis%20and%20Interpretation%20Method.pdf','https://www.maine.gov/dps/msp/sites/maine.gov.dps.msp/files/inline-files/Bloodstain%20Pattern%20Analysis%20and%20Interpretation%20Method.pdf','충돌각 i = arcsin(너비/길이)'],
+['Grine, A., & Rackley, S. (n.d.). <i>Presumptive and confirmatory forensic tests</i>. UNC School of Government. https://www.sog.unc.edu/sites/default/files/course_materials/Presumptive%20and%20Confirmatory%20Forensic%20Tests.pdf','https://www.sog.unc.edu/sites/default/files/course_materials/Presumptive%20and%20Confirmatory%20Forensic%20Tests.pdf','간이검사의 위양성과 확인검사'],
+['Milburn, T., & Flood, M. (2026). The effect of cleaning agents on Bluestar and luminol blood detection. <i>Proceedings of the West Virginia Academy of Science, 98</i>(1). https://pwvas.org/index.php/pwvas/article/view/1290','https://pwvas.org/index.php/pwvas/article/view/1290','루미놀: 표백제가 위양성(예비 결과)'],
+['National Forensic Science Technology Center. (2013). <i>Footwear &amp; tire track examination: Principles</i>. Forensic Science Simplified. https://www.forensicsciencesimplified.org/fwtt/principles.html','https://www.forensicsciencesimplified.org/fwtt/principles.html','족적의 등급 특성과 개별 특성'],
+['National Institute of Standards and Technology. (n.d.). <i>Quick minutiae search profile: Pattern classification</i>. https://tsapps.nist.gov/trainingtool/FundamentalAFISSearching/PatternClassification.html','https://tsapps.nist.gov/trainingtool/FundamentalAFISSearching/PatternClassification.html','지문 기본 유형: 궁상문·제상문·와상문'],
+['Zubair, M., & Menezes, R. G. (2026). Evaluation of postmortem changes. In <i>StatPearls</i>. StatPearls Publishing. https://www.ncbi.nlm.nih.gov/books/NBK554464/','https://www.ncbi.nlm.nih.gov/books/NBK554464/','시반 약 1시간 이후, 경직 얼굴 1~4시간 등']
+];
+
+/* ===== 그림 생성기 ===== */
+function fpSVG(type,size=110,col='#cfe3ff',bg='#10161f'){
+  let g='';
+  if(type==='whorl'){for(let i=1;i<=10;i++)g+=`<ellipse rx="${i*4.4}" ry="${i*5.2}" fill="none" stroke="${col}" stroke-width="1.7"/>`}
+  else if(type==='loop'){g+='<g transform="rotate(14)">';for(let i=1;i<=9;i++){const w=i*4.8;g+=`<path d="M${-w} 56 V-6 A${w} ${w*.95} 0 0 1 ${w} -6 V56" fill="none" stroke="${col}" stroke-width="1.7"/>`}g+='</g>'}
+  else{for(let i=0;i<11;i++){const y=-38+i*8.2,a=26-i*2.3;g+=`<path d="M-48 ${y+16} Q0 ${y-a} 48 ${y+16}" fill="none" stroke="${col}" stroke-width="1.7"/>`}}
+  const id='fp'+Math.random().toString(36).slice(2,8);
+  return `<svg viewBox="-60 -66 120 132" width="${size}"><defs><clipPath id="${id}"><ellipse rx="47" ry="58"/></clipPath></defs><rect x="-60" y="-66" width="120" height="132" rx="8" fill="${bg}"/><g clip-path="url(#${id})">${g}</g><ellipse rx="47" ry="58" fill="none" stroke="${col}" stroke-opacity=".3"/></svg>`;
+}
+const FP_NAME={whorl:'소용돌이(와상문)',loop:'고리(제상문)',arch:'활(궁상문)'};
+function fiberSVG(kind,color,size=160,zoom=1){
+  let f='';
+  if(kind==='synthetic'){f=`<rect x="-140" y="-11" width="280" height="22" rx="11" fill="${color}" stroke="#0004"/><rect x="-140" y="-6" width="280" height="3.5" rx="2" fill="#fff" opacity=".45"/>`}
+  else if(kind==='cotton'){let t='',b='';for(let x=-140;x<=140;x+=4){const h=11*Math.abs(Math.cos(x/17))+2.2;t+=`${x},${-h} `;b=`${x},${h} `+b}f=`<polygon points="${t}${b}" fill="${color}" stroke="#0005" stroke-width=".8"/>`}
+  else{let t='',b='';for(let x=-140;x<=140;x+=11){t+=`${x},-12 ${x+5},-8 `;b=`${x},12 ${x+5},8 `+b}f=`<polygon points="${t}${b}" fill="${color}" stroke="#0005" stroke-width=".8"/>`;for(let x=-140;x<=140;x+=11)f+=`<path d="M${x} -8 L${x+5.5} 0 L${x} 8" fill="none" stroke="#0006" stroke-width=".9"/>`}
+  const id='fb'+Math.random().toString(36).slice(2,8);
+  return `<svg viewBox="-100 -100 200 200" width="${size}"><defs><clipPath id="${id}"><circle r="96"/></clipPath>
+  <radialGradient id="f${id}"><stop offset="0" stop-color="#f4efe2"/><stop offset=".75" stop-color="#dcd2b8"/><stop offset="1" stop-color="#b3a780"/></radialGradient>
+  <radialGradient id="v${id}"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".88"/></radialGradient></defs>
+  <circle r="98" fill="#1a1a1a" stroke="#6d7d9a" stroke-width="3"/><g clip-path="url(#${id})"><circle r="96" fill="url(#f${id})"/><g transform="rotate(-24) scale(${zoom})">${f}</g><circle r="96" fill="url(#v${id})"/></g></svg>`;
+}
+const FB_NAME={synthetic:'합성섬유',cotton:'면',wool:'양모'};
+
+/* 족적 */
+function soleSVG(o,size=90){
+  o=o||{};const id='sl'+Math.random().toString(36).slice(2,8);
+  let t='';
+  if(o.tread==='zig'){for(let y=18;y<240;y+=14){t+=`<path d="M10 ${y} L30 ${y+8} L50 ${y} L70 ${y+8} L90 ${y}" fill="none" stroke="#e8edf6" stroke-width="4"/>`}}
+  else if(o.tread==='dots'){for(let y=20;y<240;y+=16)for(let x=18;x<90;x+=16)t+=`<circle cx="${x}" cy="${y}" r="3.6" fill="#e8edf6"/>`}
+  else if(o.tread==='heel'){t+=`<rect x="26" y="196" width="48" height="48" rx="8" fill="#e8edf6"/><rect x="24" y="30" width="52" height="90" rx="22" fill="#e8edf6" opacity=".45"/>`}
+  else if(o.tread==='pump'){t+=`<circle cx="50" cy="226" r="9" fill="#e8edf6"/><ellipse cx="50" cy="60" rx="30" ry="46" fill="#e8edf6" opacity=".45"/>`}
+  let w='';
+  if(o.wear==='outerHeel')w=`<path d="M62 175 C92 180 92 250 60 252 C70 230 68 200 62 175Z" fill="#10161f"/>`;
+  if(o.wear==='innerHeel')w=`<path d="M38 175 C8 180 8 250 40 252 C30 230 32 200 38 175Z" fill="#10161f"/>`;
+  let c=o.cut?`<path d="M58 58 l16 22" stroke="#10161f" stroke-width="3.4" stroke-linecap="round"/>`:'';
+  return `<svg viewBox="0 0 100 260" width="${size}"><defs><clipPath id="${id}"><path d="M50 5 C80 5 90 40 88 80 C86 120 75 140 78 170 C80 215 70 255 50 255 C30 255 20 215 22 170 C25 140 14 120 12 80 C10 40 20 5 50 5Z"/></clipPath></defs>
+  <rect width="100" height="260" fill="#3a2f26"/><g clip-path="url(#${id})"><rect width="100" height="260" fill="#6b5846"/>${t}${w}${c}</g>
+  <path d="M50 5 C80 5 90 40 88 80 C86 120 75 140 78 170 C80 215 70 255 50 255 C30 255 20 215 22 170 C25 140 14 120 12 80 C10 40 20 5 50 5Z" fill="none" stroke="#2a211a" stroke-width="2"/></svg>`;
+}
+
+/* 혈흔 (타원) */
+function stainSVG(wmm,lmm,size=220){
+  const sx=lmm*8,sy=wmm*8;
+  return `<svg viewBox="0 0 260 150" width="${size}"><rect width="260" height="150" rx="10" fill="#1b1f27"/>
+  <g transform="translate(130 70) rotate(-18)"><ellipse rx="${sx/2}" ry="${sy/2}" fill="#7d1018"/><ellipse rx="${sx/2-3}" ry="${sy/2-2}" fill="#9a1622" opacity=".6"/>
+  <line x1="${-sx/2}" y1="${sy/2+14}" x2="${sx/2}" y2="${sy/2+14}" stroke="#ffd166" stroke-width="1.5"/><text x="0" y="${sy/2+28}" text-anchor="middle" font-size="11" fill="#ffd166">길이 ${lmm} mm</text>
+  <line x1="${sx/2+14}" y1="${-sy/2}" x2="${sx/2+14}" y2="${sy/2}" stroke="#7fd8ff" stroke-width="1.5"/><text x="${sx/2+18}" y="4" font-size="11" fill="#7fd8ff">너비 ${wmm} mm</text></g></svg>`;
+}
+
+/* 사람 */
+function avatar(s,w=80){
+  const hair={short:`<path d="M24 40 Q26 14 50 14 Q76 14 76 40 Q64 28 50 28 Q36 28 24 40Z" fill="${s.hairc}"/>`,
+    long:`<path d="M22 60 Q16 12 50 12 Q84 12 78 60 Q74 30 50 28 Q26 30 22 60Z" fill="${s.hairc}"/>`,
+    bun:`<circle cx="50" cy="10" r="9" fill="${s.hairc}"/><path d="M24 40 Q26 14 50 15 Q76 14 76 40 Q64 27 50 27 Q36 27 24 40Z" fill="${s.hairc}"/>`,
+    gray:`<path d="M25 38 Q28 15 50 15 Q72 15 75 38 Q62 29 50 29 Q38 29 25 38Z" fill="#c9cfdb"/>`,
+    cap:`<path d="M24 38 Q28 12 50 12 Q72 12 76 38Z" fill="${s.hairc}"/><rect x="22" y="36" width="56" height="6" rx="3" fill="${s.hairc}"/>`}[s.hair||'short'];
+  let ex='';
+  if(s.glasses)ex+=`<g fill="none" stroke="#111" stroke-width="2"><circle cx="40" cy="46" r="7"/><circle cx="60" cy="46" r="7"/><path d="M47 46h6"/></g>`;
+  if(s.coat)ex+=`<path d="M20 120 L24 74 L50 90 L76 74 L80 120Z" fill="${s.coat}"/>`;
+  if(s.apron)ex+=`<path d="M32 74 L68 74 L72 120 L28 120Z" fill="${s.apron}" opacity=".95"/>`;
+  return `<svg viewBox="0 0 100 120" width="${w}"><rect x="20" y="70" width="60" height="50" rx="16" fill="${s.top}"/>${ex}<circle cx="50" cy="46" r="25" fill="${s.skin}"/>${hair}
+  <circle cx="41" cy="47" r="2.6" fill="#111"/><circle cx="59" cy="47" r="2.6" fill="#111"/><path d="M42 58 Q50 62 58 58" stroke="#5a2a22" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
+}
+
+/* ===== 장면 SVG (800x450) ===== */
+const RAINWIN=(x,y,w,h)=>`<g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#0b1626"/>${[...Array(14)].map((_,i)=>`<line class="rs" x1="${x+8+i*(w/14)}" y1="${y}" x2="${x+4+i*(w/14)}" y2="${y+h}" stroke="#7fa6d6" stroke-opacity=".35" stroke-width="1.4" style="animation-delay:${(i*.17).toFixed(2)}s"/>`).join('')}<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#3a4152" stroke-width="6"/><line x1="${x+w/2}" y1="${y}" x2="${x+w/2}" y2="${y+h}" stroke="#3a4152" stroke-width="5"/></g>`;
+function sceneStudy(){return `<svg viewBox="0 0 800 450" class="scn">
+ <rect width="800" height="300" fill="#1b2029"/><rect y="300" width="800" height="150" fill="#2b2420"/>
+ ${[...Array(10)].map((_,i)=>`<line x1="0" y1="${312+i*15}" x2="800" y2="${312+i*15}" stroke="#1e1915" stroke-width="2"/>`).join('')}
+ ${[...Array(8)].map((_,i)=>`<rect x="${12+i*100}" y="40" width="86" height="240" fill="#202632" stroke="#161a22"/>`).join('')}
+ <rect y="288" width="800" height="14" fill="#14171d"/>
+ <rect x="26" y="56" width="150" height="238" rx="4" fill="#3b2a1d"/>${[0,1,2,3].map(r=>`<rect x="32" y="${66+r*58}" width="138" height="5" fill="#241810"/>${[...Array(9)].map((_,k)=>`<rect x="${36+k*15}" y="${22+r*58+30}" width="11" height="${28+(k%3)*4}" fill="${['#5a2a2a','#2a3a5a','#3a4a2a','#5a4a2a'][(k+r)%4]}"/>`).join('')}`).join('')}
+ <rect x="194" y="112" width="74" height="76" rx="4" fill="#50565f"/><rect x="204" y="122" width="54" height="56" fill="#0d0f13"/><rect x="204" y="122" width="12" height="56" fill="#3b4048" transform="skewY(-8)"/><circle cx="245" cy="150" r="3" fill="#b49a4e"/>
+ ${RAINWIN(480,46,190,190)}
+ <path d="M470 40 Q440 150 458 250 L486 250 Q470 150 490 40Z" fill="#3a2a3f"/><path class="sway" d="M690 40 Q725 130 700 255 L664 255 Q682 140 664 40Z" fill="#3a2a3f"/>
+ <rect x="478" y="236" width="196" height="6" fill="#262c38"/>
+ <rect x="296" y="248" width="206" height="18" rx="3" fill="#4a3526"/><rect x="306" y="266" width="12" height="46" fill="#33241a"/><rect x="480" y="266" width="12" height="46" fill="#33241a"/>
+ <path d="M338 248 L334 214 L368 214 L364 248Z" fill="#1a1f2a"/><ellipse cx="351" cy="214" rx="20" ry="6" fill="#222a38"/>
+ <rect x="410" y="238" width="60" height="10" fill="#c9c3b0" opacity=".55"/>
+ <path d="M340 354 L470 346 L488 392 L330 400Z" fill="#d9d9d9" opacity=".85"/><path d="M360 354 Q390 330 430 348" fill="#d9d9d9" opacity=".85"/>
+ <polygon points="470,396 490,396 480,372" fill="#e0b93f"/><text x="480" y="393" text-anchor="middle" font-size="11" font-weight="700" fill="#222">1</text>
+ <polygon points="438,332 458,332 448,308" fill="#e0b93f"/><text x="448" y="329" text-anchor="middle" font-size="11" font-weight="700" fill="#222">2</text>
+ <rect x="700" y="96" width="92" height="222" rx="4" fill="#2a2018"/><rect x="708" y="104" width="76" height="206" fill="#3a2b20"/><circle cx="730" cy="212" r="5" fill="#b49a4e"/>
+ <polygon points="236,336 256,336 246,314" fill="#e0b93f"/><text x="246" y="333" text-anchor="middle" font-size="10" font-weight="700" fill="#222">3</text>
+ <g id="hots"></g><g id="lumlayer"></g></svg>`}
+function sceneHall(){return `<svg viewBox="0 0 800 450" class="scn">
+ <rect width="800" height="450" fill="#161a22"/><polygon points="0,0 800,0 560,150 240,150" fill="#1d222c"/><polygon points="0,450 800,450 560,290 240,290" fill="#2a2420"/>
+ <polygon points="0,0 240,150 240,290 0,450" fill="#1a1e27"/><polygon points="800,0 560,150 560,290 800,450" fill="#1a1e27"/><rect x="240" y="150" width="320" height="140" fill="#10131a"/>
+ ${[0,1,2,3,4].map(i=>`<line x1="${380+i*10}" y1="290" x2="${i*200}" y2="450" stroke="#1e1915" stroke-width="2"/>`).join('')}
+ <rect x="60" y="130" width="70" height="95" fill="#3b2a1d"/><rect x="68" y="138" width="54" height="79" fill="#23303a"/><circle cx="95" cy="172" r="14" fill="#14181f"/><circle cx="90" cy="170" r="2.5" fill="#ccd"/><circle cx="100" cy="170" r="2.5" fill="#ccd"/>
+ <rect x="660" y="130" width="70" height="95" fill="#3b2a1d"/><rect x="668" y="138" width="54" height="79" fill="#2f2a3a"/><circle cx="695" cy="172" r="14" fill="#14181f"/><circle cx="690" cy="170" r="2.5" fill="#ccd"/><circle cx="700" cy="170" r="2.5" fill="#ccd"/>
+ <rect x="300" y="160" width="60" height="124" fill="#2a2018"/><rect x="440" y="160" width="60" height="124" fill="#2a2018"/><circle cx="345" cy="226" r="3" fill="#b49a4e"/><circle cx="455" cy="226" r="3" fill="#b49a4e"/>
+ <text x="400" y="150" text-anchor="middle" font-size="12" fill="#5a6580">← 서재</text>
+ <g id="hots"></g><g id="lumlayer"></g></svg>`}
+function sceneLobby(){return `<svg viewBox="0 0 800 450" class="scn">
+ <rect width="800" height="320" fill="#181d26"/><rect y="320" width="800" height="130" fill="#262019"/>
+ <rect y="308" width="800" height="14" fill="#12151b"/>
+ <rect x="560" y="60" width="200" height="262" rx="6" fill="#2b2118"/><rect x="574" y="74" width="172" height="248" fill="#15202e"/>${[...Array(10)].map((_,i)=>`<line class="rs" x1="${584+i*17}" y1="74" x2="${580+i*17}" y2="322" stroke="#7fa6d6" stroke-opacity=".35" stroke-width="1.3" style="animation-delay:${(i*.2).toFixed(2)}s"/>`).join('')}<circle cx="728" cy="200" r="6" fill="#b49a4e"/>
+ <rect x="40" y="90" width="150" height="100" rx="4" fill="#0b0d12" stroke="#3a4152" stroke-width="5"/><rect x="48" y="98" width="134" height="84" fill="#0f2a22"/><rect x="56" y="106" width="56" height="38" fill="#14412f"/><rect x="118" y="106" width="56" height="38" fill="#14412f"/><rect x="56" y="148" width="56" height="28" fill="#14412f"/><text x="150" y="172" text-anchor="middle" font-size="11" fill="#6ee7a8" font-family="monospace">REC 01:18</text>
+ <rect x="220" y="120" width="12" height="190" fill="#3b2a1d"/>${[0,1,2].map(i=>`<circle cx="226" cy="${140+i*30}" r="6" fill="#6b5c3e"/>`).join('')}<path d="M232 150 L275 190 L240 290Z" fill="#1f2a4a"/><path d="M232 190 L282 230 L246 296Z" fill="#2a2f3a"/>
+ <rect x="300" y="268" width="210" height="40" rx="6" fill="#33241a"/>${[0,1,2,3,4].map(i=>`<rect x="${310+i*40}" y="248" width="26" height="14" rx="4" fill="#14181f"/>`).join('')}
+ <path d="M80 330 L240 430 L330 430 L180 322Z" fill="#32261c"/><rect x="78" y="314" width="20" height="30" fill="#14181f"/>
+ <g id="hots"></g><g id="lumlayer"></g></svg>`}
+function sceneKitchen(){return `<svg viewBox="0 0 800 450" class="scn">
+ <rect width="800" height="300" fill="#1a2028"/><rect y="300" width="800" height="150" fill="#2c2a28"/>
+ ${[...Array(10)].map((_,i)=>`<line x1="${i*90}" y1="300" x2="${i*90-70}" y2="450" stroke="#1f1e1c" stroke-width="2"/>`).join('')}
+ <rect x="60" y="60" width="150" height="130" fill="#3a3f4a"/><rect x="68" y="68" width="134" height="114" fill="#0b1626"/>${[...Array(7)].map((_,i)=>`<line class="rs" x1="${76+i*19}" y1="68" x2="${72+i*19}" y2="182" stroke="#7fa6d6" stroke-opacity=".35" stroke-width="1.3" style="animation-delay:${(i*.2).toFixed(2)}s"/>`).join('')}
+ <rect x="30" y="220" width="740" height="30" fill="#4a4f58"/><rect x="30" y="250" width="740" height="60" fill="#2e333b"/>
+ <rect x="560" y="196" width="120" height="30" fill="#7e8794"/><rect x="574" y="206" width="92" height="16" fill="#3a4350"/><rect x="616" y="180" width="8" height="22" fill="#9aa4b4"/><path d="M620 180 q24 0 24 14" fill="none" stroke="#9aa4b4" stroke-width="5"/>
+ <rect x="700" y="170" width="26" height="50" rx="5" fill="#cfd5dc"/><rect x="706" y="160" width="14" height="12" fill="#2a6ab8"/><text x="713" y="204" text-anchor="middle" font-size="8" fill="#2a6ab8">BLEACH</text>
+ <rect x="330" y="300" width="230" height="16" fill="#3b2a1d"/><rect x="340" y="316" width="10" height="70" fill="#2a2018"/><rect x="540" y="316" width="10" height="70" fill="#2a2018"/>
+ <rect x="380" y="280" width="140" height="20" rx="4" fill="#6b5846"/><rect x="420" y="262" width="34" height="22" rx="5" fill="#e8e4d8"/><path d="M454 270 q14 0 0 12" fill="none" stroke="#e8e4d8" stroke-width="4"/><rect x="470" y="270" width="26" height="14" rx="4" fill="#d9d2bf"/>
+ <rect x="110" y="258" width="60" height="50" rx="6" fill="#2a2d33"/>
+ <g id="hots"></g><g id="lumlayer"></g></svg>`}
+const SCENES={study:sceneStudy,hall:sceneHall,lobby:sceneLobby,kitchen:sceneKitchen};
+const LOCS={study:'서재',hall:'복도',lobby:'로비',kitchen:'주방'};
+
+'use strict';
+const $=s=>document.querySelector(s);
+const G=window.G={};
+let FAST=false;
+let S=null;
+const fresh=()=>({ch:0,loc:'lobby',hints:5,hintLog:[],clues:{},done:{},sus:{},conf:{},flags:{},ending:null,lum:false});
+
+/* ===== 사운드 ===== */
+const A={ctx:null,on:true,vol:.7,running:false,timers:[]};
+function audioInit(){
+  if(A.ctx){A.ctx.resume();return}
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  const c=A.ctx=new C();
+  A.master=c.createGain();A.master.gain.value=A.on?A.vol:0;
+  const comp=c.createDynamicsCompressor();A.master.connect(comp);comp.connect(c.destination);
+  const len=c.sampleRate*3,ir=c.createBuffer(2,len,c.sampleRate);
+  for(let k=0;k<2;k++){const d=ir.getChannelData(k);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6)}
+  A.rev=c.createConvolver();A.rev.buffer=ir;const rg=c.createGain();rg.gain.value=.6;A.rev.connect(rg);rg.connect(A.master);
+  A.bus=c.createGain();A.bus.connect(A.master);A.bus.connect(A.rev);
+  const nb=c.createBuffer(1,c.sampleRate*4,c.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;A.nb=nb;
+  const ns=()=>{const s=c.createBufferSource();s.buffer=nb;s.loop=true;s.start();return s};
+  const f=(t,fr,q)=>{const x=c.createBiquadFilter();x.type=t;x.frequency.value=fr;if(q)x.Q.value=q;return x};
+  const g=v=>{const x=c.createGain();x.gain.value=v;return x};
+  // 빗소리
+  const r1=ns(),hp=f('highpass',700),lp=f('lowpass',7500),rgn=g(.16);r1.connect(hp);hp.connect(lp);lp.connect(rgn);rgn.connect(A.master);
+  const r2=ns(),lp2=f('lowpass',380),rg2=g(.12);r2.connect(lp2);lp2.connect(rg2);rg2.connect(A.master);
+  // 바람
+  const w=ns(),bp=f('bandpass',320,1.4),wg=g(.0);w.connect(bp);bp.connect(wg);wg.connect(A.bus);
+  const lf=c.createOscillator();lf.frequency.value=.07;const lg=g(.05);lf.connect(lg);lg.connect(wg.gain);lf.start();
+  const lf2=c.createOscillator();lf2.frequency.value=.05;const lg2=g(160);lf2.connect(lg2);lg2.connect(bp.frequency);lf2.start();
+  // 저음 드론(불협)
+  const dl=f('lowpass',260),dg=g(.07);dl.connect(dg);dg.connect(A.bus);
+  [[49,'sine'],[49.8,'sine'],[73.9,'triangle'],[69.3,'sine']].forEach(([fr,ty])=>{const o=c.createOscillator();o.type=ty;o.frequency.value=fr;const og=g(ty==='triangle'?.35:.6);o.connect(og);og.connect(dl);o.start()});
+  const tr=c.createOscillator();tr.frequency.value=.18;const tg=g(.03);tr.connect(tg);tg.connect(dg.gain);tr.start();
+  A.running=true;sched();
+}
+function setVol(v){A.vol=v;if(A.master)A.master.gain.value=A.on?v:0}
+function setMute(m){A.on=!m;if(A.master)A.master.gain.value=A.on?A.vol:0}
+function env(c,node,t,a,d,peak){node.gain.cancelScheduledValues(t);node.gain.setValueAtTime(0.0001,t);node.gain.exponentialRampToValueAtTime(peak,t+a);node.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
+function thunder(){
+  const c=A.ctx;if(!c||!A.on)return;const t=c.currentTime;
+  const s=c.createBufferSource();s.buffer=A.nb;s.loop=true;const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(900,t);lp.frequency.exponentialRampToValueAtTime(60,t+4);
+  const g=c.createGain();env(c,g,t,.08,4.5,.9);s.connect(lp);lp.connect(g);g.connect(A.bus);s.start(t);s.stop(t+5.5);
+}
+function creak(){
+  const c=A.ctx;if(!c)return;const t=c.currentTime;
+  const o=c.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(52,t+1.3);
+  const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(500,t);bp.frequency.exponentialRampToValueAtTime(180,t+1.3);bp.Q.value=9;
+  const g=c.createGain();env(c,g,t,.25,1.1,.1);o.connect(bp);bp.connect(g);g.connect(A.bus);o.start(t);o.stop(t+1.6);
+}
+function drip(){
+  const c=A.ctx;if(!c)return;const t=c.currentTime;const o=c.createOscillator();o.type='sine';o.frequency.setValueAtTime(1500+Math.random()*700,t);o.frequency.exponentialRampToValueAtTime(700,t+.12);
+  const g=c.createGain();env(c,g,t,.005,.18,.05);o.connect(g);g.connect(A.bus);o.start(t);o.stop(t+.3);
+}
+function musicBox(){
+  const c=A.ctx;if(!c)return;const t0=c.currentTime+.1;
+  const n=[659,622,659,622,659,494,587,523,440];const d=[.5,.5,.5,.5,.5,.5,.5,.5,1.4];let t=t0;
+  n.forEach((fr,i)=>{const det=(Math.random()-.5)*28+(i%3===1?-18:0);const o=c.createOscillator();o.type='sine';o.frequency.value=fr*.5;o.detune.value=det;
+    const o2=c.createOscillator();o2.type='sine';o2.frequency.value=fr*1.5;o2.detune.value=det;const g=c.createGain();env(c,g,t,.01,1.6,.05);const g2=c.createGain();g2.gain.value=.25;
+    o.connect(g);o2.connect(g2);g2.connect(g);g.connect(A.bus);o.start(t);o2.start(t);o.stop(t+1.8);o2.stop(t+1.8);t+=d[i]*(1+(Math.random()-.5)*.12)});
+}
+function sting(kind){
+  const c=A.ctx;if(!c||!A.on)return;const t=c.currentTime;
+  const fr={find:[220,233],bad:[110,116.5,164.8],good:[261,329]}[kind]||[220];
+  fr.forEach(f=>{const o=c.createOscillator();o.type=kind==='bad'?'sawtooth':'sine';o.frequency.value=f;const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=kind==='bad'?500:1200;
+    const g=c.createGain();env(c,g,t,.03,kind==='bad'?1.8:.9,kind==='bad'?.12:.07);o.connect(lp);lp.connect(g);g.connect(A.bus);o.start(t);o.stop(t+2.2)});
+}
+let heart=null;
+function heartbeat(on){
+  if(heart){clearInterval(heart);heart=null}
+  if(!on||!A.ctx)return;
+  const beat=()=>{const c=A.ctx,t=c.currentTime;[0,.28].forEach((dt,i)=>{const o=c.createOscillator();o.frequency.setValueAtTime(70,t+dt);o.frequency.exponentialRampToValueAtTime(38,t+dt+.18);const g=c.createGain();env(c,g,t+dt,.01,.2,i?.25:.4);o.connect(g);g.connect(A.master);o.start(t+dt);o.stop(t+dt+.3)})};
+  beat();heart=setInterval(beat,1000);
+}
+function lightning(){
+  const f=$('#flash');f.className='';void f.offsetWidth;f.className=S&&S.flags.soft?'soft':'go';
+  setTimeout(thunder,500+Math.random()*1800);
+}
+function sched(){
+  const loop=(fn,min,max)=>{const go=()=>{if(!A.running)return;fn();A.timers.push(setTimeout(go,min+Math.random()*(max-min)))};A.timers.push(setTimeout(go,min*.5+Math.random()*(max-min)))};
+  loop(()=>lightning(),16000,38000);loop(creak,22000,52000);loop(drip,3500,9000);loop(()=>{if(Math.random()<.4)musicBox()},60000,110000);
+}
+
+/* ===== 빗물 캔버스 ===== */
+(function(){
+  const cv=$('#rain'),x=cv.getContext('2d');let W,H,d=[];
+  const rs=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;d=Array.from({length:Math.min(220,W/6|0)},()=>({x:Math.random()*W,y:Math.random()*H,l:10+Math.random()*18,v:11+Math.random()*10}))};
+  rs();addEventListener('resize',rs);
+  (function f(){x.clearRect(0,0,W,H);x.strokeStyle='rgba(150,180,220,.35)';x.lineWidth=1;x.beginPath();
+    for(const p of d){x.moveTo(p.x,p.y);x.lineTo(p.x-p.l*.18,p.y+p.l);p.y+=p.v;p.x-=p.v*.18;if(p.y>H){p.y=-20;p.x=Math.random()*W+40}}
+    x.stroke();requestAnimationFrame(f)})();
+})();
+
+/* ===== UI 유틸 ===== */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600)}
+function modal(html,cls){closeModal();const m=document.createElement('div');m.className='mb';m.id='mb';const story=(cls||'').indexOf('story')>=0;
+  m.innerHTML=`<div class="md ${cls||''}">${story?'':'<button class="xb" onclick="G.close()" aria-label="닫기">닫기 ✕</button>'}${html}</div>`;
+  if(!story)m.addEventListener('mousedown',e=>{if(e.target===m)closeModal()});
+  document.body.appendChild(m);return m.firstChild}
+function closeModal(){const m=$('#mb');if(m)m.remove()}
+G.close=closeModal;
+function typeTo(node,text,sp){
+  sp=FAST?0:(sp||26);
+  return new Promise(res=>{let i=0,done=false;node.textContent='';
+    const fin=()=>{if(done)return;done=true;clearInterval(t);node.textContent=text;res()};
+    const t=setInterval(()=>{node.textContent=text.slice(0,++i);if(i>=text.length)fin()},sp);node.onclick=fin;if(sp===0)fin()});
+}
+async function story(title,paras,btn){
+  const m=modal(`<h2 class="serif">${title}</h2><div id="sp"></div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn pri" id="sgo" disabled>${btn||'계속'}</button></div>`,'story');
+  const box=m.querySelector('#sp');
+  for(const p of paras){const e=document.createElement('p');e.className='serif';box.appendChild(e);await typeTo(e,p,28);await new Promise(r=>setTimeout(r,FAST?0:260))}
+  return new Promise(res=>{const b=m.querySelector('#sgo');b.disabled=false;b.onclick=()=>{closeModal();res()}});
+}
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ===== 단서 ===== */
+const CL={
+body:{t:'서재의 시신',x:'피해자 오진수(62), 별장 소유주. 책상 옆 바닥에 쓰러져 있고 머리에 둔기 외상. 격렬하게 저항한 흔적은 거의 없다.',k:'info'},
+coat:{t:'로비 옷걸이의 방수 재킷',x:'남색 방수 재킷 한 벌. 소매 안쪽까지 젖어 있고 표면이 매끈한 합성 소재처럼 보인다.',k:'info',ev:1},
+pm:{t:'사후 변화: 사망 후 약 1~4시간',x:'시반은 막 나타난 단계, 사후경직은 턱·얼굴에만. 검안(01:40) 기준 사망 시각은 21:40~00:40 사이. 폭이 넓어서 다른 기록으로 좁혀야 한다.',k:'sup',ev:1},
+bpa:{t:'벽 혈흔: 충돌각 30°, 기원 높이 약 46cm',x:'벽의 혈흔은 충돌각 약 30°, 기원점은 바닥 위 약 46cm. 가격 순간 피해자는 서 있지 않고 앉거나 쓰러진 상태였다. 이미 몸을 못 가누고 있었다는 뜻이다.',k:'sup',ev:1},
+lumStudy:{t:'서재 루미놀 반응',x:'금고 앞 바닥에 닦아 낸 흔적, 문 앞의 족적 모양, 문 안쪽 손잡이에도 반응. 누군가 피를 밟고 문으로 나갔다.',k:'info'},
+lumHall:{t:'복도 루미놀 반응',x:'서재 문에서 뒷계단 철문 쪽으로 이어지는 희미한 족적 반응. 범인은 정문 쪽이 아니라 뒷계단으로 빠져나갔다.',k:'info'},
+lumKit:{t:'주방 바닥의 넓은 루미놀 반응',x:'걸레질 방향으로 넓게 번진 반응, 옆에는 표백제 병. 표백제 잔류가 반응했을 가능성이 높아 혈흔이라 단정할 수 없다.',k:'trap',ev:1},
+footY:{t:'책상 옆 족적(지그재그 무늬, 275)',x:'지그재그 무늬 275mm 족적이 핏방울 아래에 깔려 있다. 족적이 먼저 생겼고 그 위로 피가 떨어졌다. 강태오의 신발과 일치하지만 사건 이전에 찍힌 흔적이다.',k:'trap',ev:1},
+footX:{t:'문 앞 족적: 혈흔 위, 마모+흠집',x:'문 앞 족적은 피 웅덩이 위에 찍혔다(범행 이후). 무늬·크기(265)는 차만식과 서도윤의 구두가 같은 모델이지만, 오른쪽 뒤꿈치 바깥 마모와 앞코 흠집은 서도윤의 구두에만 있다.',k:'key',ev:1},
+printA:{t:'금고 손잡이 지문: 윤세아',x:'소용돌이 무늬, 융선 14. 윤세아와 일치. 본인이 22시 40분경 금고를 열었다고 이미 진술했다. 지문은 찍힌 시각을 알려 주지 않는다.',k:'trap',ev:1},
+printB:{t:'찻잔 받침 지문: 한서진',x:'고리 무늬, 융선 9. 한서진과 일치. 서재에서 일하는 비서의 지문이라 이상할 것이 없다.',k:'trap',ev:1},
+printC:{t:'문 안쪽 손잡이, 피 위의 지문: 서도윤',x:'소용돌이 무늬, 융선 11. 서도윤과 일치. 지문이 핏자국 위에 찍혀 있어 피가 생긴 뒤에 손잡이를 잡았다는 뜻이다.',k:'key',ev:1},
+fiberF1:{t:'의자의 양모 섬유(베이지)',x:'양모, 베이지. 한서진의 카디건과 일치. 일하던 사무실 의자의 섬유다.',k:'trap',ev:1},
+fiberF2:{t:'피해자 소매의 합성 섬유(남색)',x:'합성섬유, 남색. 로비 옷걸이의 방수 재킷(서도윤의 것)과 일치. 접촉 시점은 알 수 없지만 서도윤의 진술과 어긋난다.',k:'key',ev:1},
+toxCup:{t:'찻잔에서 진정 성분 확인',x:'찻잔: 간이 양성 → 확인검사 확정. 위스키잔: 간이 양성이지만 확인검사 불검출(간이검사의 위양성). 주방 주전자: 음성. 약은 주방에서 차를 타는 단계가 아니라 서재의 잔에 들어갔다.',k:'sup',ev:1},
+dvr_raw:{t:'방범 녹화기 원본 기록',x:'녹화기 화면 시각 기준 기록 표(원본). 현재 화면 표시 01:18. 이 기록을 그대로 믿어도 되는지는 따로 확인해야 한다.',k:'info',ev:1},
+watch:{t:'피해자 스마트밴드: 심박 00:02 정지',x:'밴드는 통신망 시각과 동기화된 기기다. 마지막 심박 기록 00:02. 정지 시각이 곧 사망 시각의 기준점이다.',k:'sup',ev:1},
+cdr:{t:'피해자 휴대전화 통화기록',x:'23:50~23:54 변호사로부터 수신(통신사 기록). 23:54에도 피해자는 살아 있었다. 사망은 23:54 이후 00:02 사이.',k:'sup',ev:1},
+safe:{t:'금고 개폐 기록',x:'22:41 개방/22:44 폐쇄(슬롯 02), 00:03 개방/00:05 폐쇄(슬롯 02). 슬롯 02 번호는 윤세아와 한서진이 안다. 누가 열었는지는 로그만으로 알 수 없다.',k:'sup',ev:1},
+mancdr:{t:'차만식 통화기록(한전 콜센터)',x:'00:00~00:07 통화(통신사 기록). 녹음에 발전기 소음과 빗소리가 선명하다. 사망 시각에 별채 쪽에 있었다.',k:'sup',ev:1},
+ap:{t:'한서진 휴대전화 공유기 접속 로그',x:'2층 객실 공유기에 23:50~00:40 연결(인터넷 시각 서버와 동기화). 사망 시각에 2층에 있었다.',k:'sup',ev:1},
+dvr_fix:{t:'녹화기 시계는 15분 느리다: 보정된 시간표',x:'녹화기 01:18, 기준 시각 01:33 → 15분 느림. 보정 후: 윤세아는 00:00~00:12 로비에 있었다(사망 00:02에 서재에 갈 수 없다). 서도윤은 23:47 주방 쪽으로 가는 모습 이후 00:07에야 로비에 나타난다. 사망 시각 00:02는 그의 공백 20분 한가운데다.',k:'key',ev:1}
+};
+const CKIND_LABEL={key:'핵심 단서',sup:'보강 단서',trap:'함정 단서',info:'참고'};
+
+/* ===== 용의자 ===== */
+const SUS=[
+{id:'taeo',n:'강태오',a:47,role:'피해자의 사업 파트너',av:{skin:'#d9b08c',top:'#4a4f3a',hair:'short',hairc:'#222',coat:'#7c6d45'},
+ say:'열 시 반쯤 도착했소. 오진수와 투자금 문제로 크게 다퉜지. 서재를 나온 건 열한 시 이십 분쯤이고, 곧장 차를 몰고 산을 내려갔소. 비 맞고 들어갔으니 서재 바닥에 내 신발 자국이야 있겠지.',
+ conf:{footY:'맞소, 그건 내 발자국이오. 열한 시 전에 찍힌 거요. 그 위로 피가 떨어졌다면, 내가 나간 뒤에 일이 벌어졌다는 뜻 아니겠소?',
+  printA:'금고? 나는 만진 적 없소. 술잔은 들었지만.',
+  dvr_raw:'열한 시 오 분에 나갔다고? 나는 열한 시 이십 분에 시동을 걸었소. 녹화기 시계가 어긋난 모양인데, 그걸 그대로 믿어도 되는 거요?',
+  toxCup:'차는 입에도 안 댔소. 나는 위스키만 마셨고, 진정제 따위는 모르오.'}},
+{id:'seojin',n:'한서진',a:31,role:'비서',av:{skin:'#e3bd9c',top:'#9c8a6a',hair:'bun',hairc:'#3a2a20'},
+ say:'열한 시쯤 업무를 마치고 2층 방으로 올라갔어요. 그 뒤로 서재엔 가지 않았어요.',
+ conf:{fiberF1:'…갔어요. 열한 시 반 넘어 결재 서류를 두고 나왔어요.. 거짓말해서 죄송해요. 회장님을 마지막으로 본 사람이 될까 봐 무서웠어요. 그땐 멀쩡하셨고 전화기를 들고 계셨어요.',
+  printB:'제 지문이 나와도 이상할 건 없죠. 매일 일하는 방인걸요.',
+  ap:'와이파이 기록에 제 폰이 남아 있을 거예요. 방에서 한 번도 안 나왔어요.',
+  cdr:'그 통화가 23시 50분이라면, 제가 서재에서 나온 뒤에도 회장님은 살아 계셨던 거네요.',
+  safe:'슬롯 02 번호는 회장님이 세아 아가씨와 저한테 알려 주셨어요. 저는 그날 금고를 열지 않았어요.'}},
+{id:'seaa',n:'윤세아',a:26,role:'피해자의 조카',av:{skin:'#e8c4a6',top:'#6c5a7a',hair:'long',hairc:'#1a1220'},
+ say:'외삼촌이랑 상속 문제로 다퉜어요. 금고 번호는 저도 알아요. 열 시 사십 분쯤 열어서 서류를 봤고요. 주방 바닥은 와인을 쏟아서 락스로 닦았어요. 자정 직전에 로비 소파로 내려와 있었고, 서재 쪽 소리는 못 들었어요. 빗소리가 너무 컸으니까.',
+ conf:{printA:'맞아요, 제 지문일 거예요. 열었다고 말했잖아요. 비밀번호 02번은 서진 언니도 알아요.',
+  lumKit:'락스로 닦은 거예요. 병째 있잖아요. 그게 피로 보여요?',
+  dvr_raw:'제 휴대폰은 11시 59분에 로비에 앉았다고 찍혀 있는데, 녹화 화면엔 11시 45분이라고요? 선생님은 제가 앉고 얼마 있다가 뒤쪽 복도에서 나타났어요.',
+  safe:'그 시각엔 로비에 있었어요. 서재 금고를 열었을 리가 없죠.',
+  footY:'그 신발 자국은 제 게 아니에요. 저는 슬리퍼를 신고 있었어요.'}},
+{id:'mansik',n:'차만식',a:63,role:'별장 관리인',av:{skin:'#c99d78',top:'#4c5b3a',hair:'cap',hairc:'#33372c'},
+ say:'열한 시 반쯤 발전기를 보러 별채에 갔소. 자정쯤 한전에 정전 신고를 했고, 십이 시 반 넘어 본채에 들어와 서재 문이 열려 있길래 들여다봤다가 회장님을 발견했소. 열쇠는 다 내가 갖고 있지만, 나는 아무 짓도 안 했소.',
+ conf:{mancdr:'녹음 들어 보시오. 발전기 소리가 요란할 거요.',
+  footX:'구두 모델은 내 것과 같소. 오래 신어서 바닥이 반들반들하지, 마모도 흠집도 없소. 내 신발도 가져가 보시오.',
+  toxCup:'차는 서진 씨가 가끔 올려 드렸지. 나는 약 이름도 모르오.',
+  dvr_raw:'열두 시 반 넘어 들어왔다고 찍혔나? 내 손목시계로는 열두 시 사십오 분이었소.'}},
+{id:'doyun',n:'서도윤',a:38,role:'피해자의 주치의',av:{skin:'#e0b896',top:'#2a3558',hair:'short',hairc:'#2a2420',glasses:1,coat:'#e8e8ee'},
+ say:'저녁 진료 후엔 방에 있었습니다. 서재엔 들어가지 않았고요. 자정 무렵부터는 로비 소파에서 쉬었습니다. 로비 녹화기를 보시면 압니다. 이런 일이 벌어지다니, 수사에 최대한 협조하겠습니다.',
+ conf:{dvr_raw:'보세요, 23시 52분부터 소파에 있잖습니까. 사망 추정이 자정 무렵이라면서요. 제 알리바이는 녹화기가 증명합니다.',
+  printC:'…의사니까요. 쓰러진 걸 확인하려고 잠깐 들어갔을 뿐입니다. 아까는 저녁 진료 이야기를 한 겁니다.',
+  footX:'그런 구두는 흔한 모델입니다. 누구든 신죠.',
+  fiberF2:'낮에 왕진 가방을 같이 들다 묻은 거겠죠.',
+  coat:'제 재킷입니다. 저녁부터 계속 걸어 뒀어요.',
+  toxCup:'수면 유도제는 제가 처방한 적이 있습니다. 하지만 저만 아는 약이 아닙니다.',
+  dvr_fix:'…시계가 틀렸다는 건 제가 만든 일이 아닙니다. 그래도 00시 7분이라면 그 전 20분은 어디서 뭘 했냐고 물으시겠죠. 방에 있었다고, 이미 말씀드렸습니다.'}}
+];
+const SUSBY=Object.fromEntries(SUS.map(s=>[s.id,s]));
+
+/* ===== 핫스팟 ===== */
+const HOT=[
+{loc:'lobby',id:'dvr',x:112,y:140,r:46,n:'방범 녹화기'},
+{loc:'lobby',id:'coat',x:228,y:210,r:42,n:'옷걸이'},
+{loc:'lobby',id:'sofa',x:405,y:262,r:50,n:'소파'},
+{loc:'hall',id:'hdoor',x:400,y:225,r:62,n:'서재 문'},
+{loc:'hall',id:'stair',x:92,y:260,r:44,n:'뒷계단 철문'},
+{loc:'study',id:'body',x:392,y:372,r:48,n:'시신'},
+{loc:'study',id:'sleeve',x:448,y:350,r:16,n:'소매'},
+{loc:'study',id:'band',x:488,y:378,r:14,n:'스마트밴드'},
+{loc:'study',id:'wall',x:362,y:152,r:44,n:'벽 혈흔'},
+{loc:'study',id:'safe',x:231,y:150,r:40,n:'금고'},
+{loc:'study',id:'cup',x:351,y:212,r:26,n:'찻잔'},
+{loc:'study',id:'glass',x:398,y:234,r:20,n:'위스키잔'},
+{loc:'study',id:'phone',x:452,y:240,r:16,n:'휴대전화'},
+{loc:'study',id:'chair',x:280,y:268,r:30,n:'의자'},
+{loc:'study',id:'footY',x:256,y:336,r:26,n:'족적 Y'},
+{loc:'study',id:'footX',x:664,y:352,r:36,n:'족적 X'},
+{loc:'study',id:'handle',x:730,y:212,r:22,n:'문 안쪽 손잡이'},
+{loc:'kitchen',id:'bleach',x:713,y:195,r:28,n:'표백제 병'},
+{loc:'kitchen',id:'teapot',x:437,y:272,r:26,n:'찻주전자'},
+{loc:'kitchen',id:'cups',x:483,y:276,r:20,n:'찻잔'},
+{loc:'kitchen',id:'mop',x:140,y:286,r:34,n:'대걸레 통'}
+];
+const LUM={
+study:`<ellipse class="lg" cx="400" cy="372" rx="76" ry="22" data-l="lbody"/><path class="lg" d="M200 318 q40 -26 80 -4 q-30 16 -80 4z" data-l="lwipe"/><path class="lg" d="M622 336 q42 -30 90 -8 l-10 40 q-40 12 -78 -4z" data-l="lfoot"/><circle class="lg" cx="730" cy="214" r="9" data-l="lhandle"/>`,
+hall:`${[0,1,2,3,4,5].map(i=>`<ellipse class="lg" cx="${430-i*52}" cy="${396-i*14}" rx="13" ry="21" transform="rotate(${-60+i*4} ${430-i*52} ${396-i*14})" data-l="ltrail"/>`).join('')}`,
+kitchen:`<path class="lg" d="M300 372 q80 -40 200 -10 q60 14 120 -8 l12 26 q-80 28 -140 4 q-100 -22 -180 20z" data-l="lstreak"/><path class="lg" d="M170 350 q60 -20 110 4 l-6 20 q-50 -18 -100 -2z" data-l="lstreak"/>`,
+lobby:''
+};
+const DECO={
+study:`<g opacity=".9"><ellipse cx="362" cy="152" rx="5" ry="3" fill="#7d1018" transform="rotate(-18 362 152)"/><ellipse cx="376" cy="160" rx="6" ry="3.4" fill="#7d1018" transform="rotate(-16 376 160)"/><ellipse cx="350" cy="145" rx="3" ry="1.8" fill="#7d1018"/>
+<path d="M250 330 l14 -2 l6 22 l-16 4z" fill="#4a3a2c"/><path d="M262 344 q8 4 6 14 q-8 -4 -6 -14" fill="#7d1018"/>
+<ellipse cx="662" cy="352" rx="44" ry="20" fill="#6a0e16" opacity=".85"/><path d="M652 326 l22 0 l8 42 l-30 2z" fill="#3e2e22"/><path d="M646 330 l14 0 l-2 14 l-12 0z" fill="#2c2018"/>
+<path d="M722 206 q8 6 4 14" stroke="#7d1018" stroke-width="4" fill="none"/><rect x="498" y="236" width="14" height="22" fill="#222" opacity=".0"/>
+<circle cx="452" cy="238" r="7" fill="#1b2230"/><circle cx="398" cy="234" r="7" fill="none" stroke="#b9c8d8" stroke-opacity=".6"/><rect x="266" y="252" width="30" height="46" rx="4" fill="#2c2a2a"/></g>`
+};
+
+/* ===== 장 ===== */
+const CHAPS=[null,
+{t:'1장. 서재의 시신',tasks:[['pm','시신의 사후 변화로 사망 시각 범위 추정하기'],['bpa','벽 혈흔의 각도와 기원 높이 계산하기']],
+ intro:['2026년 8월 14일 밤. 장마는 사흘째였고, 산중 별장 운해재로 오르는 길은 불어난 계곡물에 끊겨 있었다.','새벽 12시 45분, 관리인의 신고가 간신히 닿았다. 서재에서 주인이 쓰러져 있다고 했다.','당신이 현관에 들어선 것은 01시 33분. 손전등을 켜자 빗소리 사이로 어딘가에서 마룻장이 낮게 울었다.','손전등 불빛이 닿는 곳만 보인다. 구석구석 비춰 보라.']},
+{t:'2장. 어둠 속에서 번지는 빛',tasks:[['lum','루미놀로 서재·복도·주방 반응 확인하기'],['foot','서재의 두 족적 비교·식별하기'],['fp','잠재지문 3점 비교하기']],
+ intro:['정전이 왔다. 발전기가 한 번 기침하듯 멈추더니 별장 전체가 숨을 죽였다.','이럴 때 쓰는 것이 루미놀이다. 어둠 속에서만 보이는 푸른 빛은 피를 가리킨다. 다만 피만 가리키는 것은 아니다.','발끝에 닿은 것이 족적인지, 닦아낸 자국인지. 빛이 가리키는 것이 전부 사실은 아니다.']},
+{t:'3장. 다섯 개의 진술',tasks:[['fiber','섬유 2점 현미경 비교하기'],['tox','간이검사→확인검사로 약물 확인하기'],['sus','다섯 명의 진술 모두 듣기']],
+ intro:['새벽 3시. 거실에 다섯 명이 모였다. 모두 비에 젖은 얼굴이고, 모두 누군가를 의심하는 눈이다.','증거는 사람을 흔든다. 그러나 사람은 증거보다 먼저 거짓말을 한다.','로비의 방범 녹화기도 이제 열람할 수 있다. 진술과 맞춰 보라.']},
+{t:'4장. 시계가 거짓말할 때',tasks:[['dig','디지털 기록을 모아 녹화기 시각 보정하기'],['acc','범인과 증거를 지목하기']],
+ intro:['아침이 오지 않는다. 빗소리는 오히려 커졌고, 어디선가 오르골 소리가 아주 작게 들린다.','시각이 모든 알리바이를 좌우한다. 그런데 그 시각을 알려 주는 기계는 정확한가.','밴드, 통화기록, 금고, 공유기, 녹화기. 기록은 입을 열지 않지만 거짓말도 하지 않는다. 기계의 시계가 틀리지 않았다면.']}
+];
+
+/* ===== 단서/진행 ===== */
+function addClue(id){
+  if(S.clues[id])return false;S.clues[id]=1;sting('find');recompute();
+  toast('단서 기록: '+CL[id].t);renderSide();return true;
+}
+function recompute(){
+  const c=S.clues;
+  S.done={pm:!!c.pm,bpa:!!c.bpa,lum:!!(c.lumStudy&&c.lumHall&&c.lumKit),foot:!!(c.footX&&c.footY),fp:!!(c.printA&&c.printB&&c.printC),
+    fiber:!!(c.fiberF1&&c.fiberF2),tox:!!c.toxCup,sus:Object.keys(S.sus).length>=5,dig:!!c.dvr_fix,acc:false};
+}
+function needCh(n,msg){if(S.ch<n){toast(msg||('이 도구는 '+n+'장에서 사용할 수 있다'));return false}return true}
+
+/* ===== 장면 ===== */
+function renderScene(){
+  const st=$('#stage');st.querySelectorAll('svg.scn').forEach(e=>e.remove());
+  st.insertAdjacentHTML('afterbegin',SCENES[S.loc]());
+  const hots=st.querySelector('#hots'),lum=st.querySelector('#lumlayer');
+  if(DECO[S.loc])hots.insertAdjacentHTML('beforeend',DECO[S.loc]);
+  HOT.filter(h=>h.loc===S.loc).forEach(h=>hots.insertAdjacentHTML('beforeend',`<circle class="h" data-hot="${h.id}" cx="${h.x}" cy="${h.y}" r="${h.r}"><title>${h.n}</title></circle>`));
+  lum.innerHTML=LUM[S.loc]||'';
+  document.querySelectorAll('#nav .btn').forEach(b=>b.classList.toggle('pri',b.dataset.loc===S.loc));
+}
+G.go=loc=>{S.loc=loc;setLum(false);renderScene();if(loc==='hall'||loc==='study')creak()};
+function setLum(on){
+  S.lum=on;const st=$('#stage');st.classList.toggle('lum',on);st.classList.remove('fade');
+  clearInterval(setLum.t);const ls=$('#lumstat');ls.textContent='';
+  if(on){let n=30;ls.textContent='발광 30초';setLum.t=setInterval(()=>{n--;ls.textContent='발광 '+n+'초';if(n===5)st.classList.add('fade');if(n<=0){clearInterval(setLum.t);setLum(false);toast('발광이 약해졌다. 다시 분사할 수 있다')}},FAST?20:1000)}
+  $('#lumbtn').textContent=on?'루미놀 해제':'루미놀 분사 (암실)';
+}
+G.lum=()=>{
+  if(S.ch<2){toast('감식 키트는 2장에서 도착한다');return}
+  if(S.lum){setLum(false);return}
+  if($('#stage').classList.contains('lights'))G.light();
+  setLum(true);sting('find');
+  if(S.loc==='study'&&addClue('lumStudy'))toast('서재에서 푸른 빛이 번진다');
+  if(S.loc==='hall')addClue('lumHall');
+  if(S.loc==='kitchen')toast('주방 바닥이 넓게 빛난다. 빛나는 곳을 눌러 확인하라');
+  if(S.loc==='lobby')toast('이곳에서는 반응이 없다');
+  checkAdvance();
+};
+
+/* ===== 조사 ===== */
+function inspect(id){
+  const B=(l,fn)=>`<button class="btn pri" onclick="${fn}">${l}</button>`;
+  const T={
+   dvr:()=>{if(S.ch>=3){addClue('dvr_raw');const b=S.ch>=4?B('시각 보정 도구 열기','G.digital(\'dvr\')'):'';return['방범 녹화기','채널 3개(1 현관, 2 로비, 3 주방문). 화면 구석의 시각은 <b>01:18</b>. 원본 기록을 확보했다. 수첩에서 진술과 맞춰 볼 수 있다.<br><br>'+dvrTable(false)+'<p class="note">이 표의 시각은 녹화기 화면 시각 그대로다.</p>'+b]}
+     return['방범 녹화기','채널 3개가 돌아가는 녹화기. 열람은 진술을 확보한 뒤(3장)에 요청할 수 있다. 화면 구석에는 <b>01:18</b>이 찍혀 있다.']},
+   coat:()=>{addClue('coat');return['옷걸이의 재킷','남색 방수 재킷이 걸려 있다. 소매 안쪽까지 젖었고 표면이 매끈하다. 누구 것인지는 진술에서 확인하자.']},
+   sofa:()=>['로비 소파','쿠션이 눌려 있다. 옆 탁자의 찻잔은 식었다.'],
+   hdoor:()=>['서재 문','안쪽으로 열린 문. 경첩이 길게 운다. 바닥에는 젖은 신발 자국이 여러 방향으로 겹쳐 있다.'],
+   stair:()=>['뒷계단 철문','본채 뒤쪽으로 통하는 철문. 문턱에 젖은 흙이 묻어 있다.'],
+   body:()=>{addClue('body');return['시신 (오진수, 62)','책상 옆에 쓰러져 있다. 머리 뒤쪽에 둔기 외상. 얼굴은 평온한 편이고 저항흔은 눈에 띄지 않는다. 시반과 경직을 확인하자.'+B('사후 변화 추정','G.pm()')]},
+   sleeve:()=>['시신의 소매','소맷단에 미세한 섬유가 붙어 있다. 의자에서도 섬유를 채취할 수 있다.'+(S.ch>=3?B('섬유 비교','G.fiber()'):'<p class="note">섬유 비교는 3장에서 가능하다.</p>')],
+   band:()=>['피해자의 스마트밴드','왼쪽 손목의 밴드. 화면은 꺼졌다.'+(S.ch>=4?B('기록 열람','G.digital(\'watch\')'):'<p class="note">기기 기록은 4장에서 분석한다.</p>')],
+   wall:()=>['벽의 혈흔','벽 높은 곳에 작은 타원형 혈흔이 몇 점 있다. 바닥의 혈액 웅덩이 중심까지 수평 거리 80cm.'+B('각도·높이 계산','G.bpa()')],
+   safe:()=>['금고','문이 열려 있고 안은 거의 비어 있다. 번호키 자판에 슬롯 02 표시. 손잡이에서 지문을 채취할 수 있다.'+(S.ch>=2?B('지문 채취·비교','G.fp()'):'')+(S.ch>=4?B('금고 개폐 기록','G.digital(\'safe\')'):'')],
+   cup:()=>['책상 위 찻잔','받침 접시가 있고 찻물이 조금 남았다.'+(S.ch>=2?B('지문 비교','G.fp()'):'')+(S.ch>=3?B('간이검사','G.tox()'):'')],
+   glass:()=>['위스키잔','손님이 마신 듯한 위스키잔.'+(S.ch>=3?B('간이검사','G.tox()'):'<p class="note">시약 검사는 3장에서 가능하다.</p>')],
+   phone:()=>['피해자의 휴대전화','화면 잠금. 통화 기록을 열람하려면 기록 분석이 필요하다.'+(S.ch>=4?B('통화기록·접속기록','G.digital(\'phone\')'):'')],
+   chair:()=>['사무 의자','등받이에 부드러운 섬유가 붙어 있다.'+(S.ch>=3?B('섬유 비교','G.fiber()'):'<p class="note">섬유 비교는 3장에서 가능하다.</p>')],
+   footY:()=>['책상 옆 족적 Y','지그재그 무늬 족적. 일부는 핏방울에 덮여 있다.'+(S.ch>=2?B('족적 비교','G.foot()'):'<p class="note">족적 비교는 2장에서 가능하다.</p>')],
+   footX:()=>['문 앞 족적 X','피 웅덩이를 밟고 문 쪽으로 향한 구두 자국.'+(S.ch>=2?B('족적 비교','G.foot()'):'<p class="note">족적 비교는 2장에서 가능하다.</p>')],
+   handle:()=>['문 안쪽 손잡이','손잡이에 붉은 얼룩이 있고 그 위에 지문 융선이 겹쳐 보인다.'+(S.ch>=2?B('지문 채취·비교','G.fp()'):'<p class="note">지문 채취는 2장에서 가능하다.</p>')],
+   bleach:()=>['표백제 병','반쯤 빈 락스 병과 젖은 장갑. 바닥에서 약품 냄새가 난다.'],
+   teapot:()=>['주방 찻주전자','식은 차가 남아 있다.'+(S.ch>=3?B('간이검사','G.tox()'):'<p class="note">시약 검사는 3장에서 가능하다.</p>')],
+   cups:()=>['주방의 찻잔들','씻어 말려 둔 찻잔들. 특이점은 없다.'],
+   mop:()=>['대걸레 통','젖은 대걸레. 최근에 바닥을 닦은 흔적이다.']
+  };
+  const r=T[id]();modal(`<h2>${r[0]}</h2><p>${r[1]}</p><div class="row" style="margin-top:12px"><button class="btn" onclick="G.close()">닫기</button></div>`);
+  if(id==='hdoor'||id==='stair')creak();
+}
+function lumClick(l){
+  const m={lbody:['혈액 웅덩이','시신 아래의 넓은 반응. 예상된 반응이다.'],lwipe:['금고 앞 닦임 자국','누군가 피를 닦아 낸 호(弧)형 흔적이 이어진다.'],lfoot:['문 앞 족적 반응','문을 향해 걸어간 구두 모양의 반응. 피를 밟았다.'],lhandle:['문 안쪽 손잡이','손잡이에서 반응이 난다. 피 묻은 손으로 잡았다.'],ltrail:['복도 족적 반응','서재 문에서 뒷계단 철문 쪽으로 이어진다.']};
+  if(l==='lstreak'){
+    modal(`<h2>주방 바닥의 빛</h2><p>걸레질 방향으로 넓게 번진 반응이다. 옆에는 반쯤 빈 표백제 병. 어떻게 판단하겠는가?</p>
+    <div class="row"><button class="btn" onclick="G.kit('blood')">혈흔이다</button><button class="btn" onclick="G.kit('bleach')">표백제 반응일 가능성이 높다</button></div>
+    <p class="note">루미놀은 혈액의 철 성분이 촉매가 되어 빛나는 간이 반응이다. 표백제에도 반응하는 위양성이 보고되어 있다.</p>`);return}
+  const r=m[l];if(r)modal(`<h2>${r[0]}</h2><p>${r[1]}</p><button class="btn" onclick="G.close()">닫기</button>`);
+}
+G.kit=a=>{
+  if(a==='bleach'){addClue('lumKit');modal(`<h2>판단: 표백제 잔류</h2><p class="ok">좋은 판단이다. 반응 모양이 점·튀김이 아니라 걸레질 방향이고, 현장에 표백제가 있다. 루미놀 양성은 혈흔의 '가능성'이지 확정이 아니다. 이 단서는 윤세아의 말을 확인해 줄 뿐이다.</p><button class="btn" onclick="G.close()">닫기</button>`);checkAdvance()}
+  else modal(`<h2>다시 생각해 보자</h2><p class="bad">피로 단정하기엔 이르다. 빛의 모양과 주변 물건을 다시 보라. 점 모양인가, 걸레질 방향인가?</p><button class="btn" onclick="G.close()">닫기</button>`);
+};
+
+/* ===== 사후 변화 ===== */
+const RNG=['1시간 미만','1~4시간','4~8시간','8~12시간','12시간 이상'];
+G.pm=()=>{
+  const sel=n=>`<select id="${n}">${RNG.map((r,i)=>`<option value="${i}">${r}</option>`).join('')}</select>`;
+  modal(`<h2>사후 변화로 시각 추정</h2><p>검안 시각 <b>01:40</b>. 실온 24℃.</p>
+  <table><tr><th>소견</th><th>관찰</th><th>경과 시간 추정</th></tr>
+  <tr><td>시반</td><td>손가락으로 누르면 흰색으로 사라지는 옅은 시반. 이제 막 나타난 단계.</td><td>${sel('pmL')}</td></tr>
+  <tr><td>사후경직</td><td>턱과 얼굴 근육에만. 팔다리는 아직 부드럽다.</td><td>${sel('pmR')}</td></tr>
+  <tr><td>체온</td><td>직장온도 35.1℃. 환경에 따라 차이가 크다.</td><td class="note">단독 근거 불가</td></tr></table>
+  <button class="btn pri" onclick="G.pmGo()">종합</button><div id="pmr"></div>`);
+};
+G.pmGo=()=>{
+  const l=+$('#pmL').value,r=+$('#pmR').value,o=[];
+  if(l!==1)o.push('시반: 시반은 사후 약 1시간 뒤부터 나타나 3~4시간에 뚜렷해지고 6~8시간에 고정된다. 막 나타난 단계는 1~4시간 쪽이다.');
+  if(r!==1)o.push('사후경직: 얼굴에서 시작해 1~4시간이면 시작하고 6시간쯤에야 전신으로 퍼진다. 얼굴·턱에만 있다면 1~4시간 쪽이다.');
+  if(o.length)$('#pmr').innerHTML='<p class="bad">'+o.join('<br>')+'</p>';
+  else{addClue('pm');$('#pmr').innerHTML='<p class="ok">두 소견이 겹치는 구간은 사후 1~4시간. 검안 시각 01:40 기준 사망은 <b>21:40~00:40</b>이다. 폭이 3시간이나 된다. 소견 하나로 시각을 단정하면 안 되고, 정확한 시각은 기기 기록과 증언으로 좁혀야 한다.</p>';checkAdvance()}
+};
+
+/* ===== 혈흔 각도 ===== */
+G.bpa=()=>{
+  modal(`<h2>혈흔 각도와 기원 높이</h2><div class="row">${stainSVG(6,12,300)}<div class="note" style="flex:1;min-width:200px">벽에 찍힌 타원형 혈흔을 측정했다. 충돌각 <b>i = arcsin(너비 ÷ 길이)</b>. 기원 높이는 <b>tan i × 수평 거리</b>로 근사한다. 수평 거리는 80cm.</div></div>
+  <div class="row">너비 <input type="number" id="bw" step=".1" style="width:80px"> mm 길이 <input type="number" id="bl" step=".1" style="width:80px"> mm <button class="btn" onclick="G.bpaCalc()">계산</button></div><div id="bpr"></div>`);
+};
+G.bpaCalc=()=>{
+  const w=+$('#bw').value,l=+$('#bl').value;
+  if(!(w>0&&l>w)){$('#bpr').innerHTML='<p class="bad">너비는 길이보다 작아야 한다. 그림의 눈금 표시를 다시 읽자.</p>';return}
+  if(Math.abs(w-6)>.7||Math.abs(l-12)>.7){$('#bpr').innerHTML='<p class="bad">측정값이 그림과 맞지 않는다. 노란 표시선(길이)과 파란 표시선(너비)을 다시 읽자.</p>';return}
+  const i=Math.asin(w/l)*180/Math.PI,h=Math.tan(i*Math.PI/180)*80;
+  $('#bpr').innerHTML=`<p>충돌각 = <b>${i.toFixed(1)}°</b>, 기원 높이 ≈ <b>${h.toFixed(0)} cm</b> (근사값)</p><p>가격 순간 피해자의 머리는 어디에 있었는가?</p><div class="row"><button class="btn" onclick="G.bpaAns(0)">서 있었다 (약 100cm 이상)</button><button class="btn" onclick="G.bpaAns(1)">앉거나 쓰러져 있었다 (약 50cm 이하)</button></div><div id="bpa2"></div>`;
+};
+G.bpaAns=a=>{
+  if(a===1){addClue('bpa');$('#bpa2').innerHTML='<p class="ok">기원 높이가 약 46cm이다. 서 있었다면 이 높이가 나올 수 없다. 피해자는 이미 몸을 못 가누는 상태였다. 누군가 먼저 무언가를 먹였을 가능성이 생긴다. 단 이것은 근사 계산이다.</p>';checkAdvance()}
+  else $('#bpa2').innerHTML='<p class="bad">46cm는 서 있는 사람의 머리 높이가 아니다. 계산값과 자세를 다시 비교하자.</p>';
+};
+
+/* ===== 족적 ===== */
+const SHOES={taeo:{tread:'zig',sz:275,w:0,c:0,nm:'강태오'},seojin:{tread:'pump',sz:240,w:0,c:0,nm:'한서진'},seaa:{tread:'dots',sz:235,w:0,c:0,nm:'윤세아'},mansik:{tread:'heel',sz:265,w:0,c:0,nm:'차만식'},doyun:{tread:'heel',sz:265,w:1,c:1,nm:'서도윤'}};
+const TN={zig:'지그재그',pump:'굽 구두',dots:'점 무늬',heel:'가죽 구두(굽 블록)'};
+function ordSVG(top){
+  const pr=`<g><rect x="70" y="14" width="62" height="92" rx="14" fill="#4a3a2a"/>${[0,1,2,3,4].map(i=>`<path d="M74 ${28+i*16} l26 8 l26 -8" stroke="#a8977f" stroke-width="3" fill="none"/>`).join('')}</g>`;
+  const bl=`<ellipse cx="60" cy="62" rx="48" ry="36" fill="#8a1220" opacity="${top==='blood'?.93:1}"/>`;
+  return `<svg viewBox="0 0 160 120" width="150"><rect width="160" height="120" rx="8" fill="#241c16"/>${top==='blood'?pr+bl:bl+pr}</svg>`;
+}
+G.foot=()=>{
+  if(!needCh(2))return;
+  const cand=Object.entries(SHOES).map(([k,s])=>`<div class="card">${soleSVG({tread:s.tread,wear:s.w?'outerHeel':0,cut:s.c},56)}<br><b>${s.nm}</b><br>${TN[s.tread]} / ${s.sz}mm<br><span class="note">${s.w?'바깥 뒤꿈치 마모, 앞코 흠집':'마모·흠집 없음'}</span></div>`).join('');
+  const opts=`<option value="">선택</option>`+Object.entries(SHOES).map(([k,s])=>`<option value="${k}">${s.nm}</option>`).join('');
+  modal(`<h2>족적 비교</h2><p class="note">등급 특성(무늬·크기)은 같은 모델이면 공유하고, 개별 특성(마모·흠집)은 사용 중 생겨 그 신발에만 있다. 순서(혈흔 위/아래)가 시간을 알려 준다.</p>
+  <div class="grid g2"><div class="card"><b>족적 Y (책상 옆)</b><br>${soleSVG({tread:'zig'},64)} ${ordSVG('blood')}<br>무늬 지그재그 / 275mm<div class="row" style="justify-content:center">먼저 생긴 것 <select id="oY"><option value="">선택</option><option value="foot">족적</option><option value="blood">혈흔</option></select> 일치 <select id="mY">${opts}</select></div></div>
+  <div class="card"><b>족적 X (문 앞)</b><br>${soleSVG({tread:'heel',wear:'outerHeel',cut:1},64)} ${ordSVG('foot')}<br>무늬 가죽 구두 / 265mm, 바깥 뒤꿈치 마모, 앞코 흠집<div class="row" style="justify-content:center">먼저 생긴 것 <select id="oX"><option value="">선택</option><option value="foot">족적</option><option value="blood">혈흔</option></select> 일치 <select id="mX">${opts}</select></div></div></div>
+  <h3>용의자 신발</h3><div class="grid g5">${cand}</div><div class="row"><button class="btn pri" onclick="G.footGo()">판정</button></div><div id="fr"></div>`);
+};
+G.footGo=()=>{
+  const v=id=>$('#'+id).value,o=[];
+  if(v('oY')!=='foot')o.push('Y: 핏방울이 족적 위를 덮고 있다. 아래에 있는 족적이 먼저 생겼다.');
+  if(v('mY')!=='taeo')o.push('Y: 지그재그 무늬 275mm는 한 명뿐이다.');
+  if(v('oX')!=='blood')o.push('X: 족적이 피 웅덩이를 눌러 그 위에 찍혔다. 혈흔이 먼저 생겼다.');
+  if(v('mX')==='mansik')o.push('X: 차만식의 구두는 무늬·크기가 같지만 마모와 흠집이 없다. 등급 특성만 같을 뿐 개별 특성이 다르다.');
+  else if(v('mX')!=='doyun')o.push('X: 무늬(가죽 구두)와 크기(265mm)를 먼저 걸러 보고, 그다음 마모·흠집으로 가른다.');
+  if(o.length){$('#fr').innerHTML='<p class="bad">'+o.join('<br>')+'</p>';return}
+  addClue('footY');addClue('footX');
+  $('#fr').innerHTML='<p class="ok">Y는 강태오의 족적이며 사건 이전에 찍혔다. X는 혈흔 위에 찍혔으므로 범행 이후이고, 개별 특성까지 서도윤의 구두와 일치한다. 같은 모델(차만식)은 개별 특성으로 배제된다.</p>';checkAdvance();
+};
+
+/* ===== 지문 ===== */
+const FPC={taeo:{t:'loop',rc:12},seojin:{t:'loop',rc:9},seaa:{t:'whorl',rc:14},mansik:{t:'arch',rc:6},doyun:{t:'whorl',rc:11}};
+const LIFT={A:{t:'whorl',rc:14,w:'금고 손잡이',a:'seaa',c:'printA'},B:{t:'loop',rc:9,w:'찻잔 받침',a:'seojin',c:'printB'},C:{t:'whorl',rc:11,w:'문 안쪽 손잡이(핏자국 위)',a:'doyun',c:'printC'}};
+G.fp=()=>{
+  if(!needCh(2))return;
+  const so=`<option value="">선택</option>`+SUS.map(s=>`<option value="${s.id}">${s.n}</option>`).join('');
+  const to=`<option value="">유형</option>`+Object.entries(FP_NAME).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  const cards=Object.entries(LIFT).map(([k,l])=>`<div class="card"><b>채취 ${k}: ${l.w}</b><br>${fpSVG(l.t,100)}<br>융선 수 ${l.rc}<div class="row" style="justify-content:center"><select id="ft${k}">${to}</select><select id="fs${k}">${so}</select></div></div>`).join('');
+  const cand=SUS.map(s=>`<div class="card"><b>${s.n}</b><br>${fpSVG(FPC[s.id].t,70)}<br>${FP_NAME[FPC[s.id].t]}<br>융선 수 ${FPC[s.id].rc}</div>`).join('');
+  modal(`<h2>잠재지문 비교</h2><p class="note">지문의 기본 유형은 궁상문·제상문·와상문. 유형이 같아도 융선 수와 세부 특징이 같아야 동일인이다. (이 게임에서는 중심~삼각주 사이 융선 수로 단순화했다.)</p><div class="grid g3">${cards}</div><h3>대조용 지문(5명)</h3><div class="grid g5">${cand}</div><div class="row"><button class="btn pri" onclick="G.fpGo()">판정</button></div><div id="fpr"></div>`);
+};
+G.fpGo=()=>{
+  const o=[];
+  for(const [k,l] of Object.entries(LIFT)){
+    const t=$('#ft'+k).value,s=$('#fs'+k).value;
+    if(t!==l.t)o.push(`채취 ${k}: 무늬 유형을 다시 보자.`);
+    else if(s!==l.a)o.push(`채취 ${k}: 유형이 같은 후보가 둘일 수 있다. 융선 수까지 비교하자.`);
+  }
+  if(o.length){$('#fpr').innerHTML='<p class="bad">'+o.join('<br>')+'</p>';return}
+  Object.values(LIFT).forEach(l=>addClue(l.c));
+  $('#fpr').innerHTML='<p class="ok">A는 윤세아, B는 한서진, C는 서도윤. A·B는 일상적으로 만질 수 있는 물건이고 본인들도 이미 인정한 접촉이다. 지문은 찍힌 <b>시각</b>을 알려 주지 않는다. 그러나 C는 피 위에 겹쳐 찍혔다. 피가 생긴 뒤에 잡았다는 순서가 남는다.</p>';checkAdvance();
+};
+
+/* ===== 섬유 ===== */
+const GARM={taeo:['트렌치코트','cotton','#b5a06a'],seojin:['카디건','wool','#d8c9a3'],seaa:['후드 집업','cotton','#9aa1ab'],mansik:['작업 점퍼','cotton','#5a6a3a'],doyun:['방수 재킷','synthetic','#24366b']};
+const FSAMP={F1:{k:'wool',c:'#d8c9a3',w:'사무 의자 등받이',a:'seojin',cl:'fiberF1'},F2:{k:'synthetic',c:'#24366b',w:'피해자 소맷단',a:'doyun',cl:'fiberF2'}};
+G.fiber=()=>{
+  if(!needCh(3))return;
+  const so=`<option value="">선택</option>`+SUS.map(s=>`<option value="${s.id}">${s.n}</option>`).join('');
+  const ko=`<option value="">종류</option>`+Object.entries(FB_NAME).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  const cards=Object.entries(FSAMP).map(([k,f])=>`<div class="card"><b>시료 ${k}: ${f.w}</b><br>${fiberSVG(f.k,f.c,150,1.4)}<div class="row" style="justify-content:center"><select id="fk${k}">${ko}</select><select id="fo${k}">${so}</select></div></div>`).join('');
+  const g=SUS.map(s=>`<div class="card"><b>${s.n}</b><br><span style="display:inline-block;width:30px;height:30px;border-radius:50%;background:${GARM[s.id][2]}"></span><br>${GARM[s.id][0]}<br>${FB_NAME[GARM[s.id][1]]}</div>`).join('');
+  modal(`<h2>섬유 현미경 비교</h2><p class="note">매끈한 원통형은 합성섬유, 꼬인 리본 모양은 면, 비늘 모양 표면은 양모의 특징이다. 비교현미경으로는 종류와 색, 단면을 함께 본다.</p><div class="grid g2">${cards}</div><h3>옷 5벌의 섬유</h3><div class="grid g5">${g}</div><div class="row"><button class="btn pri" onclick="G.fiberGo()">판정</button></div><div id="fbr"></div>`);
+};
+G.fiberGo=()=>{
+  const o=[];
+  for(const [k,f] of Object.entries(FSAMP)){
+    if($('#fk'+k).value!==f.k)o.push(`시료 ${k}: 섬유 모양을 다시 보자(매끈함, 꼬임, 비늘).`);
+    else if($('#fo'+k).value!==f.a)o.push(`시료 ${k}: 종류와 색을 모두 맞춰 보자.`);
+  }
+  if(o.length){$('#fbr').innerHTML='<p class="bad">'+o.join('<br>')+'</p>';return}
+  addClue('fiberF1');addClue('fiberF2');
+  $('#fbr').innerHTML='<p class="ok">F1은 한서진의 카디건(양모, 베이지), F2는 서도윤의 방수 재킷(합성, 남색)과 일치. 섬유는 접촉 시점을 알려 주지 못한다. 한서진은 매일 그 방에서 일한다. 서도윤은 서재에 들어가지 않았다고 했다.</p>';checkAdvance();
+};
+
+/* ===== 약물 간이/확인 ===== */
+const TOXS={cup:{n:'서재 찻잔',p:1,c:1},glass:{n:'위스키잔',p:1,c:0},pot:{n:'주방 찻주전자',p:0,c:0}};
+G.tox=()=>{
+  if(!needCh(3))return;S.flags.tx=S.flags.tx||{};
+  const rows=Object.entries(TOXS).map(([k,s])=>{const t=S.flags.tx[k]||{};return `<tr><td>${s.n}</td><td>${t.p===undefined?`<button class="btn sm" onclick="G.toxP('${k}')">간이검사</button>`:(t.p?'<span class="bad">양성</span>':'음성')}</td><td>${t.p&&t.c===undefined?`<button class="btn sm" onclick="G.toxC('${k}')">확인검사 의뢰</button>`:(t.c===undefined?'-':(t.c?'<span class="bad">진정 성분 확인</span>':'불검출'))}</td></tr>`}).join('');
+  modal(`<h2>약물 검사</h2><p class="note">간이검사(presumptive)는 가능성을 빠르게 거르는 검사이고 위양성이 있다. 확정은 확인검사(confirmatory)로 한다.</p><table><tr><th>시료</th><th>간이검사</th><th>확인검사</th></tr>${rows}</table><div id="txr"></div>`);
+  txCheck();
+};
+G.toxP=k=>{S.flags.tx[k]={p:TOXS[k].p};G.tox()};
+G.toxC=k=>{S.flags.tx[k].c=TOXS[k].c;G.tox()};
+function txCheck(){
+  const t=S.flags.tx,box=$('#txr');if(!box)return;
+  if(t.cup&&t.cup.c===1){addClue('toxCup');checkAdvance()}
+  let m=[];
+  if(t.glass&&t.glass.p===1&&t.glass.c===undefined)m.push('위스키잔이 간이검사에서 양성이다. 아직 확정이 아니다. 확인검사를 의뢰하자.');
+  if(t.glass&&t.glass.c===0)m.push('위스키잔은 확인검사에서 불검출이다. 간이 양성은 위양성이었다.');
+  if(t.cup&&t.cup.c===1)m.push('찻잔에서 진정 성분이 확인되었다. 주전자는 음성이므로 약은 서재의 잔에 들어갔다. 잔을 서재에 가져온 사람과 약을 구할 수 있는 사람이 중요해진다.');
+  box.innerHTML='<p class="'+(t.cup&&t.cup.c?'ok':'note')+'">'+m.join('<br>')+'</p>';
+}
+
+/* ===== 디지털 ===== */
+const DVR=[
+ ['CH1',22,15,'강태오 현관 입장'],['CH1',23,5,'강태오 현관 퇴장(차량 이동)'],['CH3',23,32,'서도윤, 쟁반을 들고 주방 문에서 복도 쪽으로'],
+ ['CH2',23,45,'윤세아 로비 소파 착석 ~ 23:57 퇴석'],['CH2',23,52,'서도윤 뒤쪽 복도에서 로비 등장, 소파 착석 ~ 00:14'],['CH1',0,30,'차만식 현관 입장(신고 직후)']
+];
+const hm=(h,m)=>String(h%24).padStart(2,'0')+':'+String(m).padStart(2,'0');
+function shift(h,m,d){let t=h*60+m+d;t=(t+1440)%1440;return[Math.floor(t/60),t%60]}
+function dvrTable(corr){
+  const rows=DVR.map(r=>{const c=shift(r[1],r[2],15);const hl=corr&&(r[3].indexOf('서도윤 뒤쪽')===0||r[3].indexOf('서도윤, 쟁반')===0||r[3].indexOf('윤세아')===0);
+    return `<tr><td>${r[0]}</td><td>${hm(r[1],r[2])}</td>${corr?`<td class="${hl?'hl':''}"><b>${hm(c[0],c[1])}</b></td>`:''}<td>${r[3]}</td></tr>`}).join('');
+  return `<table class="tl"><tr><th>채널</th><th>녹화기 시각</th>${corr?'<th>실제 시각</th>':''}<th>기록</th></tr>${rows}</table>`;
+}
+G.digital=(tab)=>{
+  if(!needCh(4,'디지털 기록 분석은 4장에서 한다'))return;
+  tab=tab||'watch';
+  const tabs=[['watch','밴드'],['phone','통화·접속'],['safe','금고'],['dvr','녹화기']].map(([k,n])=>`<span class="tab ${k===tab?'on':''}" onclick="G.digital('${k}')">${n}</span>`).join('');
+  let body='';
+  if(tab==='watch'){addClue('watch');body=`<p>피해자 스마트밴드의 심박 로그. 밴드는 통신망 시각과 동기화되어 있고 기준 시각과 대조했을 때 오차가 없다.</p><table><tr><th>시각</th><th>심박</th></tr><tr><td>23:58</td><td>92</td></tr><tr><td>00:00</td><td>71</td></tr><tr><td>00:01</td><td>40</td></tr><tr><td>00:02</td><td>기록 없음(정지)</td></tr></table><p class="note">사후 변화의 3시간 폭이 이 한 줄로 몇 분 단위로 좁혀진다.</p>`}
+  else if(tab==='phone'){addClue('cdr');addClue('mancdr');addClue('ap');body=`<p>통신사 통화기록과 공유기 접속 로그는 서버 시각 기준이라 신뢰도가 높다.</p><table><tr><th>대상</th><th>기록</th></tr><tr><td>피해자 휴대전화</td><td>23:50~23:54 변호사 수신(4분 20초)</td></tr><tr><td>차만식</td><td>00:00~00:07 한전 콜센터 발신(녹음에 발전기 소음)</td></tr><tr><td>한서진 휴대전화</td><td>2층 객실 공유기 연결 23:50~00:40</td></tr></table>`}
+  else if(tab==='safe'){addClue('safe');body=`<p>금고 번호키 로그. 기록된 것은 슬롯 번호뿐이다.</p><table><tr><th>시각</th><th>동작</th><th>슬롯</th></tr><tr><td>22:41</td><td>개방</td><td>02</td></tr><tr><td>22:44</td><td>폐쇄</td><td>02</td></tr><tr><td>00:03</td><td>개방</td><td>02</td></tr><tr><td>00:05</td><td>폐쇄</td><td>02</td></tr></table><p class="note">슬롯 02 번호는 윤세아와 한서진이 알고 있었다. 누가 열었는지는 로그만으로 알 수 없다.</p>`}
+  else{
+    const done=S.clues.dvr_fix;
+    body=`<p>기기의 시각은 반드시 <b>기준 시각과 대조</b>해 오차를 기록해야 한다. 녹화기 화면과 수사관 시계를 읽어 입력하라.</p>
+    <div class="grid g2"><div class="card"><b>방범 녹화기 화면</b><br><svg viewBox="0 0 200 70" width="190"><rect width="200" height="70" rx="6" fill="#0a1a12"/><text x="100" y="42" text-anchor="middle" font-family="monospace" font-size="30" fill="#6ee7a8">01:18</text><text x="10" y="14" font-size="9" fill="#6ee7a8" font-family="monospace">REC CH2</text></svg></div>
+    <div class="card"><b>수사관 휴대전화(기준 시각)</b><br><svg viewBox="0 0 200 70" width="190"><rect width="200" height="70" rx="6" fill="#10151e"/><text x="100" y="42" text-anchor="middle" font-family="monospace" font-size="30" fill="#cfe3ff">01:33</text><text x="10" y="14" font-size="9" fill="#7d8aa0">통신망 시각</text></svg></div></div>
+    <div class="row">녹화기 <input type="text" id="dv1" placeholder="HH:MM" style="width:80px"> 기준 <input type="text" id="dv2" placeholder="HH:MM" style="width:80px"> <button class="btn" onclick="G.dvrCalc()">오차 계산·보정 적용</button></div><div id="dvr">${done?dvrAfter():dvrTable(false)}</div>`;
+  }
+  modal(`<h2>디지털 기록 분석</h2><div>${tabs}</div><div style="border:1px solid #2a3140;padding:12px;border-radius:0 8px 8px 8px">${body}</div><div class="row" style="margin-top:10px"><button class="btn" onclick="G.close()">닫기</button></div>`);
+  checkAdvance();
+};
+function dvrAfter(){
+  return `<p class="ok">녹화기는 기준 시각보다 <b>15분 느리다</b>. 모든 기록에 +15분을 더해 보정했다.</p>${dvrTable(true)}
+  <p>보정 결과: 윤세아는 <b>00:00~00:12</b> 로비에 있었다. 사망(00:02)과 금고 개방(00:03)에 서재에 있을 수 없다. 서도윤은 23:47 복도 쪽으로 간 뒤 <b>00:07</b>에야 로비에 나타난다. 그 사이 20분이 비어 있고 사망 시각이 한가운데다. 알리바이가 녹화기 시각 그대로일 때만 성립했던 사람은 한 명이다.</p>`;
+}
+G.dvrCalc=()=>{
+  const p=s=>{const m=/^(\d{1,2}):(\d{2})$/.exec(s.trim());return m?(+m[1])*60+(+m[2]):null};
+  const a=p($('#dv1').value),b=p($('#dv2').value);
+  if(a===null||b===null){$('#dvr').innerHTML='<p class="bad">HH:MM 형식으로 입력하라. 예: 01:05</p>';return}
+  const d=b-a;
+  if(d!==15){$('#dvr').innerHTML=`<p class="bad">계산된 오차 ${d}분. 화면의 시각을 다시 읽자.</p>`;return}
+  addClue('dvr_fix');$('#dvr').innerHTML=dvrAfter();checkAdvance();
+};
+
+/* ===== 사이드/진행 ===== */
+function renderSide(){
+  if(!S||!S.ch)return;const c=CHAPS[S.ch];
+  $('#chtag').textContent=c.t;$('#hc').textContent=S.hints;
+  const all=c.tasks.filter(t=>t[0]!=='acc').every(t=>S.done[t[0]]);
+  let nxt='';
+  if(S.ch<3&&all)nxt=`<button class="btn pri" onclick="G.next()">다음 장으로</button>`;
+  if(S.ch===3&&all)nxt=`<button class="btn pri" onclick="G.arrest()">수사 회의로</button>`;
+  if(S.ch===4&&S.done.dig)nxt=`<button class="btn pri" onclick="G.accuse()">범인 지목하기</button>`;
+  $('#tasks').innerHTML=c.tasks.map(t=>`<div class="task ${S.done[t[0]]?'ok':''}"><span class="c">${S.done[t[0]]?'✔':'○'}</span><span>${t[1]}</span></div>`).join('')+(S.ch===3?'<div class="note" style="margin-top:6px">진술 확보: '+Object.keys(S.sus).length+' / 5</div>':'')+`<div style="margin-top:10px">${nxt}</div>`;
+  $('#nbc').textContent=Object.keys(S.clues).length;
+  $('#logbox').innerHTML=S.hintLog.length?S.hintLog.map((h,i)=>`<div>힌트 ${i+1}: ${h}</div>`).join(''):'사용한 힌트가 여기에 남는다.';
+}
+function checkAdvance(){recompute();renderSide()}
+G.next=async()=>{
+  if(S.ch>=3)return;S.ch++;recompute();renderSide();sting('bad');lightning();
+  await story(CHAPS[S.ch].t,CHAPS[S.ch].intro,'조사 시작');
+  if(A.ctx)musicBox();G.go(S.ch===2?'study':'lobby');renderSide();
+};
+
+/* ===== 힌트 5회 ===== */
+function nextHint(){
+  const c=S.clues,d=S.done;
+  if(S.ch===1){
+    if(!d.pm)return'시신의 시반·경직·체온은 하나만 보고 단정하지 않는다. 시반과 경직이 각각 가리키는 시간대의 겹치는 구간을 찾자.';
+    if(!d.bpa)return'벽의 혈흔은 타원이다. 너비와 길이의 비로 각도를 구하고, 그 각도로 높이를 잡는다. 높이는 피해자의 자세를 말해 준다.';
+    return'1장 과제를 끝냈다. 로비의 옷걸이와 녹화기 화면도 눈여겨보자.';
+  }
+  if(S.ch===2){
+    if(!c.lumKit)return'루미놀은 피에만 반응하지 않는다. 주방 바닥의 빛 모양을 보고, 곁에 놓인 물건을 보자.';
+    if(!d.foot)return'족적은 혈흔 위에 찍혔나, 아래에 찍혔나? 순서가 시간을 말한다. 그리고 같은 모델과 같은 신발은 다르다. 마모와 흠집을 보자.';
+    if(!d.fp)return'무늬 유형이 같은 후보가 둘이면 융선 수까지 비교하자. 피 위에 찍힌 지문이 있다.';
+    return'2장 과제를 끝냈다. 다음 장으로 넘어가자.';
+  }
+  if(S.ch===3){
+    if(!d.fiber)return'섬유는 종류(모양)와 색을 함께 비교하라. 그리고 누구의 옷과 맞든 접촉 시점은 알 수 없다.';
+    if(!d.tox)return'간이검사 양성은 가능성일 뿐이다. 양성이 나온 시료는 확인검사로 가려내자.';
+    if(!d.sus)return'다섯 명의 진술을 모두 들어 보자. 증거를 제시하면 진술 속 시각이 어긋나는 사람이 보인다. 녹화기 시각에 주목하라.';
+    return'회의에서 서두르지 마라. 족적 Y가 핏방울 아래에 있었다는 사실을 떠올리자.';
+  }
+  if(!d.dig)return'기기의 시계는 기준 시각과 대조해 오차를 기록해야 한다. 녹화기 화면과 수사관 시계를 비교하라. 몇 분 어긋났는가?';
+  return'15분은 한 사람의 알리바이를 무너뜨리고 다른 한 사람의 알리바이를 지켜 준다. 보정된 시간표에서 공백이 20분인 사람을 찾자. 그리고 근거는 피 위에 찍힌 것(지문·족적)과 시간표에서 고르자.';
+}
+G.hint=()=>{
+  if(!S.ch)return;
+  if(S.hints<=0){modal('<h2>힌트 소진</h2><p>5번의 힌트를 모두 썼다. 수첩의 단서를 다시 살펴보자.</p><button class="btn" onclick="G.close()">닫기</button>');return}
+  modal(`<h2>힌트 사용</h2><p>힌트는 게임 전체에서 5번만 쓸 수 있다. 지금 사용할까? (남은 횟수 ${S.hints})</p><div class="row"><button class="btn pri" onclick="G.hintUse()">사용</button><button class="btn" onclick="G.close()">취소</button></div>`);
+};
+G.hintUse=()=>{const h=nextHint();S.hints--;S.hintLog.push(h);renderSide();modal(`<h2>힌트 ${S.hintLog.length} / 5</h2><p>${h}</p><button class="btn" onclick="G.close()">닫기</button>`)};
+
+/* ===== 수첩 ===== */
+G.notes=()=>{
+  const ids=Object.keys(S.clues);
+  modal(`<h2>수사 수첩</h2>${ids.length?`<table><tr><th>단서</th><th>내용</th></tr>${ids.map(i=>`<tr><td>${CL[i].t}</td><td>${CL[i].x}</td></tr>`).join('')}</table>`:'<p class="note">아직 기록된 단서가 없다.</p>'}
+  ${Object.keys(S.sus).length?`<h3>진술</h3>${Object.keys(S.sus).map(k=>`<p><b>${SUSBY[k].n}</b>: ${SUSBY[k].say}</p>`).join('')}`:''}<button class="btn" onclick="G.close()">닫기</button>`);
+};
+
+/* ===== 심문 ===== */
+G.interview=(sel)=>{
+  if(!needCh(3,'진술 청취는 3장에서 시작한다'))return;
+  sel=sel||SUS[0].id;const s=SUSBY[sel];
+  S.sus[sel]=1;recompute();renderSide();
+  const list=SUS.map(x=>`<div class="sus ${x.id===sel?'on':''} ${S.sus[x.id]?'done':''}" onclick="G.interview('${x.id}')">${avatar(x.av,46)}<div><b>${x.n}</b> (${x.a})<br><span class="note">${x.role}</span></div></div>`).join('');
+  const m=modal(`<h2>진술 청취</h2><div class="grid" style="grid-template-columns:240px 1fr"><div>${list}</div><div><div class="row">${avatar(s.av,70)}<div><b>${s.n}</b><br><span class="note">${s.role}</span></div></div><div class="speech serif" id="say"></div><div class="row" style="margin-top:10px"><button class="btn pri" onclick="G.confront('${sel}')">증거 제시</button><button class="btn" onclick="G.close()">닫기</button></div><div id="cfr"></div></div></div>`);
+  typeTo(m.querySelector('#say'),s.say,22);
+};
+G.confront=sid=>{
+  const ev=Object.keys(S.clues).filter(i=>CL[i].ev);
+  if(!ev.length){$('#cfr').innerHTML='<p class="note">제시할 증거가 아직 없다.</p>';return}
+  $('#cfr').innerHTML='<h3>제시할 증거</h3>'+ev.map(i=>`<div class="ev" onclick="G.show('${sid}','${i}')"><b>${CL[i].t}</b></div>`).join('');
+};
+G.show=(sid,cid)=>{
+  const s=SUSBY[sid],r=s.conf[cid];
+  const sp=$('#say');typeTo(sp,r?r:'…(그 증거와는 별다른 관련이 없다는 표정이다)',18);
+  if(r){S.conf[sid+cid]=1}
+};
+
+/* ===== 체포 함정 ===== */
+G.arrest=()=>{
+  modal(`<h2>수사 회의</h2><p class="serif" style="line-height:1.9">서장의 전화가 온다. "강태오 건, 서재 책상에 지문과 술잔, 책상 옆 족적까지 나왔네. 돈 문제로 다툰 것도 본인이 인정했고. 체포영장을 신청하겠네. 승인하겠나?"</p>
+  <table><tr><th>서장이 근거로 든 것</th></tr><tr><td>서재의 강태오 족적(지그재그 275)</td></tr><tr><td>투자금 다툼과 서재 체류 인정</td></tr><tr><td>사건 당일 밤 별장 방문</td></tr></table>
+  <div class="row"><button class="btn pri" onclick="G.arrestAns(1)">체포영장 신청 승인</button><button class="btn" onclick="G.arrestAns(0)">보류하고 기록 검증을 먼저 한다</button></div>`);
+};
+G.arrestAns=async a=>{
+  if(a){closeModal();S.ending='arrest';await endScreen('BAD','잘못된 체포','강태오는 구속되었고 사건은 서둘러 정리되었다. 몇 주 뒤 그의 족적이 핏방울 아래, 즉 범행 이전에 찍힌 것이며 그가 23시 20분에 이미 별장을 떠났다는 기록이 나왔다. 그 사이 진짜 범인은 아무 일 없었다는 얼굴로 장례식장에 서 있었다. 족적의 순서, 그리고 기기의 시계를 확인하지 않은 대가였다.',null);return}
+  S.ch=4;recompute();renderSide();sting('bad');lightning();
+  await story(CHAPS[4].t,CHAPS[4].intro,'조사 시작');
+  if(A.ctx)musicBox();G.go('lobby');renderSide();
+};
+
+/* ===== 최종 지목 ===== */
+G.accuse=()=>{
+  const ev=Object.keys(S.clues).filter(i=>CL[i].ev);
+  window._sel={};
+  modal(`<h2>범인 지목</h2><p class="note">범인 1명과 근거 증거를 최대 4개 고른다. 증거는 많이 고른다고 좋은 것이 아니다. 범인을 직접 가리키는 증거를 골라라.</p>
+  <h3>범인</h3><div class="row">${SUS.map(s=>`<label class="sus" style="flex:1;min-width:140px"><input type="radio" name="cul" value="${s.id}">${avatar(s.av,36)} ${s.n}</label>`).join('')}</div>
+  <h3>근거 (<span id="evn">0</span>/4)</h3>${ev.map(i=>`<div class="ev" id="e_${i}" onclick="G.pick('${i}')"><div><b>${CL[i].t}</b><br><span class="note">${CL[i].x}</span></div></div>`).join('')}
+  <div class="row"><button class="btn pri" onclick="G.judge()">지목</button><button class="btn" onclick="G.close()">취소</button></div>`);
+};
+G.pick=i=>{
+  const s=window._sel;if(s[i]){delete s[i]}else{if(Object.keys(s).length>=4){toast('근거는 4개까지');return}s[i]=1}
+  document.getElementById('e_'+i).classList.toggle('sel',!!s[i]);$('#evn').textContent=Object.keys(s).length;
+};
+G.judge=async()=>{
+  const r=document.querySelector('input[name=cul]:checked');if(!r){toast('범인을 선택하라');return}
+  const evs=Object.keys(window._sel),keys=evs.filter(e=>CL[e].k==='key').length,traps=evs.filter(e=>CL[e].k==='trap').length;
+  closeModal();heartbeat(true);
+  let end;
+  if(r.value==='doyun'){end=(keys>=3&&traps<=1)?'A':'B'}else end='C';
+  S.ending=end;
+  await new Promise(x=>setTimeout(x,FAST?0:900));heartbeat(false);
+  if(end==='A')await endScreen('TRUE END','빗소리에 묻힌 비명','서도윤은 한동안 말이 없었다. 보정된 시간표, 피 위에 찍힌 지문, 마모와 흠집이 일치한 구두. 그리고 기기의 시계가 15분 느리다는 것을 그만은 몰랐다. 그는 로비의 녹화기가 자신의 알리바이를 지켜 줄 것이라고 믿고 있었다. 금고에는 피해자가 폭로하려던 진료기록 원본이 있었고, 서도윤은 진정 성분이 든 차를 서재에 올린 뒤 몸을 가누지 못하는 오진수를 내리쳤다. 비명은 없었다. 빗소리가 모든 것을 덮었으니까.','good',true);
+  else if(end==='B')await endScreen('PARTIAL END','불충분한 증거','당신은 서도윤을 올바르게 지목했지만, 제시한 근거가 그를 현장에 직접 묶어 두지 못했다. 변호인은 지문과 섬유가 일상적 접촉일 수 있다고 반박했고, 영장은 기각되었다. 시각 보정, 피 위의 지문, 마모와 흠집이 일치한 구두. 범인을 직접 가리키는 근거를 다시 골라 보자.','bad',false);
+  else await endScreen('BAD END','무고한 사람',SUSBY[r.value].n+'은(는) 범인이 아니었다. 당신이 고른 근거는 일상적 접촉, 사건 이전의 흔적, 혹은 위양성일 수 있는 반응이었다. 잘못 지목된 사람은 법정에 서게 되었고, 진짜 범인은 로비 소파에서 조용히 비 내리는 창밖을 보고 있었다.','bad',false);
+};
+async function endScreen(tag,title,text,snd,showTl){
+  sting(snd==='good'?'good':'bad');if(snd!=='good')lightning();
+  const m=modal(`<div class="sub">${tag}</div><h2 class="serif">${title}</h2><p class="serif" id="et" style="line-height:2"></p><div id="etl"></div><div class="row" style="margin-top:14px"><button class="btn pri" onclick="G.restart()">처음부터 다시</button><button class="btn" onclick="G.refs()">참고문헌</button></div>`,'story');
+  await typeTo(m.querySelector('#et'),text,30);
+  if(showTl)m.querySelector('#etl').innerHTML=`<h3>범행 시간표(실제 시각)</h3><table><tr><th>시각</th><th>사건</th></tr><tr><td>22:30~23:20</td><td>강태오 방문, 퇴장</td></tr><tr><td>23:35~23:42</td><td>한서진 서류 전달</td></tr><tr><td>23:47</td><td>서도윤, 쟁반을 들고 주방 쪽에서 복도로</td></tr><tr><td>23:50~23:54</td><td>피해자 통화(생존)</td></tr><tr><td>00:02</td><td>피해자 사망(밴드)</td></tr><tr><td>00:03~00:05</td><td>금고 개폐, 뒷계단으로 이탈</td></tr><tr><td>00:07~00:29</td><td>서도윤 로비 등장(녹화기에는 23:52~00:14)</td></tr><tr><td>00:45</td><td>차만식 발견·신고</td></tr></table>`;
+}
+G.restart=()=>{closeModal();location.reload()};
+G.refs=()=>modal(`<h2>참고문헌 (APA 7판)</h2><ol class="refs">${REFS.map(r=>`<li>${r[0]}<br><a href="${r[1]}" target="_blank" rel="noopener">${r[1]}</a><br><span class="note">활용: ${r[2]}</span></li>`).join('')}</ol><p class="note">게임의 사건과 인물, 추리 경로는 모두 창작입니다. 도구의 원리(각도 계산, 시반·경직 시간대, 등급·개별 특성, 간이·확인검사, 기기 시각 대조)만 위 자료에 근거합니다. 사후 변화와 혈흔 계산은 교육용 근사이며 실제 감정은 전문가가 수행합니다.</p><button class="btn" onclick="G.close()">닫기</button>`);
+
+/* ===== 교사용 ===== */
+G.teacher=()=>{
+  const key=Object.keys(CL).filter(i=>CL[i].k!=='info').map(i=>`<tr><td>${CL[i].t}</td><td>${CKIND_LABEL[CL[i].k]}</td></tr>`).join('');
+  const m=modal(`<h2>교사용 해설 (T)</h2><p><b>범인:</b> 서도윤(주치의). 결정적 반전: 녹화기가 15분 느려 알리바이가 뒤집힌다(보정 후 00:07에야 로비 등장, 사망 00:02).</p>${dvrTable(true)}
+  <h3>함정</h3><p>강태오(족적 Y는 핏방울 아래=사전 흔적), 한서진(양모 섬유·거짓 진술은 일상적 접촉), 윤세아(금고 지문·주방 루미놀=락스·슬롯 02 공유 코드), 차만식(같은 구두 모델: 개별 특성 없음)</p>
+  <h3>단서 분류</h3><table><tr><th>단서</th><th>분류</th></tr>${key}</table>
+  <p>정답 지목: 핵심 단서(문 앞 족적 X, 피 위 지문 C, 소매 섬유 F2, 보정된 시간표) 중 3개 이상 + 함정 단서 1개 이하.</p>
+  <div class="row"><button class="btn" onclick="G.jump(1)">1장</button><button class="btn" onclick="G.jump(2)">2장</button><button class="btn" onclick="G.jump(3)">3장</button><button class="btn" onclick="G.jump(4)">4장</button><button class="btn" onclick="G.close()">닫기</button></div>`);
+};
+G.jump=n=>{closeModal();S.ch=n;recompute();renderSide();G.go(n===2?'study':'lobby')};
+
+/* ===== 시작/이벤트 ===== */
+G.start=async()=>{
+  S=fresh();S.flags.soft=$('#o_soft').checked;if($('#o_assist').checked)$('#stage').classList.add('assist');
+  A.on=$('#o_snd').checked;audioInit();setMute(!A.on);
+  $('#gate').remove();$('#app').style.visibility='visible';
+  await story('빗소리에 묻힌 비명',CHAPS[1].intro,'조사 시작');
+  S.ch=1;recompute();G.go('lobby');renderSide();if(A.ctx)musicBox();
+};
+(function(){
+  const st=$('#stage');
+  const mv=e=>{const r=st.getBoundingClientRect(),p=e.touches?e.touches[0]:e;st.style.setProperty('--mx',(p.clientX-r.left)+'px');st.style.setProperty('--my',(p.clientY-r.top)+'px');st.style.setProperty('--r',Math.max(90,r.width*.15)+'px')};
+  st.addEventListener('pointermove',mv);st.addEventListener('pointerdown',mv);
+  st.addEventListener('click',e=>{
+    const l=e.target.closest&&e.target.closest('[data-l]');if(l&&S.lum){lumClick(l.dataset.l);return}
+    const h=e.target.closest&&e.target.closest('[data-hot]');if(h&&!S.lum)inspect(h.dataset.hot)});
+  addEventListener('keydown',e=>{if((e.key==='t'||e.key==='T')&&S&&S.ch&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))G.teacher();if(e.key==='Escape')closeModal()});
+  $('#snd').onclick=()=>{setMute(A.on);$('#snd').textContent=A.on?'소리 끄기':'소리 켜기'};
+  $('#vol').oninput=e=>setVol(+e.target.value);
+  $('#softb').onclick=()=>{S.flags.soft=!S.flags.soft;toast(S.flags.soft?'번쩍임 감소: 켬':'번쩍임 감소: 끔')};
+  $('#assb').onclick=()=>{st.classList.toggle('assist')};
+})();
+
+/* ===== 장 이동 ===== */
+G.chmenu=()=>{
+  if(!S||!S.ch)return;
+  modal(`<h2>장 이동</h2><p class="note">과제를 마치지 않아도 이동할 수 있다. 앞 장의 도구는 단서를 찾아야 열리는 경우가 있으니 수업에서는 순서대로 진행하는 편이 좋다.</p>
+  <div class="grid g2">${CHAPS.slice(1).map((c,i)=>`<button class="btn ${i+1===S.ch?'pri':''}" onclick="G.goCh(${i+1})">${c.t}${i+1===S.ch?' (현재)':''}</button>`).join('')}</div>
+  <div class="row" style="margin-top:12px"><button class="btn" onclick="G.close()">닫기</button></div>`);
+};
+G.goCh=async n=>{
+  closeModal();if(n===S.ch)return;const fwd=n>S.ch;
+  S.ch=n;recompute();renderSide();
+  if(fwd){sting('bad');lightning();await story(CHAPS[n].t,CHAPS[n].intro,'조사 시작');if(A.ctx)musicBox()}
+  G.go(n===2?'study':'lobby');renderSide();toast(CHAPS[n].t+'로 이동했다');
+};
+
+G.light=()=>{
+  const st=$('#stage'),on=!st.classList.contains('lights');
+  if(on&&S.lum)setLum(false);
+  st.classList.toggle('lights',on);$('#lightb').textContent=on?'불 끄기':'불 켜기';
+  toast(on?'불을 켰다. 분위기는 덜하지만 단서 위치가 모두 보인다':'불을 껐다. 손전등만 의지한다');
+};
+</script></body></html>
