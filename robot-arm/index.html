@@ -1,0 +1,955 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>로봇팔 코딩 미션</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: 작업대 한 장 — 왼쪽 명령 조립대, 오른쪽 로봇 작업 무대. 좁은 화면에서는 무대가 위로 올라온다. */
+:root {
+  --bg:#EDF0F4; --surface:#FFFFFF; --surface-2:#E3E8EE; --ink:#1B2530; --ink-soft:#566574; --line:#C9D1DB;
+  --accent:#F25C1F; --accent-ink:#FFFFFF;
+  --c-shoulder:#F25C1F; --c-elbow:#12877B; --c-wrist:#6B4FD8; --c-finger:#C98A00;
+  --good:#14804A; --bad:#C62F2F;
+  --stage-bg:#F8FAFC; --stage-grid:#DEE4EB; --table:#2B3A47; --metal:#3A4A59; --metal-2:#566A7D;
+  --obj-red:#E04A2F; --obj-blue:#2F6FE0; --zone-line:#7A8B9B;
+  --font-display:"Black Han Sans","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-body:"IBM Plex Sans KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#10161C; --surface:#19222B; --surface-2:#243039; --ink:#E8EDF2; --ink-soft:#9AA8B6; --line:#33424F;
+    --accent:#FF7A3D; --accent-ink:#1A1109;
+    --c-shoulder:#FF7A3D; --c-elbow:#2CC4B3; --c-wrist:#9B86FF; --c-finger:#FFC247;
+    --good:#4CD38A; --bad:#FF6B6B;
+    --stage-bg:#141C23; --stage-grid:#202B34; --table:#2A3744; --metal:#B7C4D1; --metal-2:#8497A9;
+    --obj-red:#FF6A4D; --obj-blue:#5C94FF; --zone-line:#6C7E8F; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#10161C; --surface:#19222B; --surface-2:#243039; --ink:#E8EDF2; --ink-soft:#9AA8B6; --line:#33424F;
+  --accent:#FF7A3D; --accent-ink:#1A1109;
+  --c-shoulder:#FF7A3D; --c-elbow:#2CC4B3; --c-wrist:#9B86FF; --c-finger:#FFC247;
+  --good:#4CD38A; --bad:#FF6B6B;
+  --stage-bg:#141C23; --stage-grid:#202B34; --table:#2A3744; --metal:#B7C4D1; --metal-2:#8497A9;
+  --obj-red:#FF6A4D; --obj-blue:#5C94FF; --zone-line:#6C7E8F; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 16px 32px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin-inline: auto; display: flex; flex-direction: column; gap: 16px; }
+
+/* top bar */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.brand { font-family: var(--font-display); font-size: 28px; line-height: 1.1; margin: 0; letter-spacing: .01em; }
+.brand small { display: block; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0; margin-top: 2px; }
+.levels { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.lv { display: flex; flex-direction: column; align-items: flex-start; gap: 0; min-width: 104px; padding: 6px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); text-align: left; }
+.lv b { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); font-weight: 700; }
+.lv span { font-size: 14px; font-weight: 600; }
+.lv i { font-style: normal; font-size: 12px; letter-spacing: .08em; color: var(--c-finger); height: 16px; }
+.lv[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+
+/* two-pane */
+.game { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+.panel { background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel h2 { font-family: var(--font-display); font-weight: 400; font-size: 19px; margin: 0; }
+.sub { font-size: 13px; color: var(--ink-soft); margin: 0; }
+
+/* builder */
+.step { display: flex; flex-direction: column; gap: 8px; }
+.step-h { display: flex; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.step-h em { font-style: normal; font-family: var(--font-mono); color: var(--accent); }
+.cards { display: flex; flex-wrap: wrap; gap: 8px; }
+.card { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface-2); font-weight: 600; font-size: 15px; transition: transform .08s, border-color .12s, background .12s; }
+.card:hover { border-color: var(--ink-soft); }
+.card:active { transform: translateY(1px); }
+.card .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--dot, var(--ink-soft)); flex: none; }
+.card[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.card[aria-pressed="true"] .dot { box-shadow: 0 0 0 2px var(--bg); }
+.card.deg { font-family: var(--font-mono); padding-inline: 12px; min-width: 52px; justify-content: center; }
+.step[data-locked="true"] .cards { opacity: .45; pointer-events: none; }
+.custom { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+.custom input { width: 84px; padding: 8px 8px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 15px; font-weight: 700; }
+.sentence { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); min-height: 56px; }
+.sentence .slot { font-size: 17px; font-weight: 700; }
+.sentence .blank { color: var(--ink-soft); font-weight: 500; border-bottom: 2px dashed var(--ink-soft); padding-inline: 8px; }
+.sentence .deg-s { font-family: var(--font-mono); }
+.btn { padding: 10px 16px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 700; }
+.btn:hover:not(:disabled) { border-color: var(--ink-soft); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.add { margin-left: auto; }
+.divider { height: 1px; background: var(--line); border: 0; margin: 2px 0; }
+
+/* program */
+.prog-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.count { font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); }
+ol.prog { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; padding-right: 2px; }
+ol.prog li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 8px 6px 6px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); }
+ol.prog li.run { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+ol.prog li.done { opacity: .6; }
+ol.prog li .n { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--ink-soft); text-align: center; }
+ol.prog li .t { display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
+ol.prog li .t .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dot); flex: none; }
+ol.prog li .t .deg-s { font-family: var(--font-mono); font-weight: 700; }
+ol.prog .tools { display: flex; gap: 2px; }
+.ib { width: 30px; height: 30px; border-radius: 8px; border: 0; background: transparent; color: var(--ink-soft); font-size: 15px; line-height: 1; }
+.ib:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+.ib:disabled { opacity: .3; cursor: not-allowed; }
+.empty { padding: 18px 14px; border: 1.5px dashed var(--line); border-radius: 12px; color: var(--ink-soft); font-size: 14px; text-align: center; }
+.runbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.runbar .btn.run { flex: 1 1 140px; font-size: 17px; padding-block: 12px; }
+.speed { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft); margin-left: auto; }
+.speed select { padding: 7px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+
+/* stage */
+.mission { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; justify-content: space-between; }
+.mission h2 { margin: 0; }
+.mission p { margin: 0; font-size: 14px; flex-basis: 100%; }
+.mission .rule { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); }
+.stage { scroll-margin-top: 12px; width: 100%; border-radius: 12px; border: 1.5px solid var(--line); background: var(--stage-bg); overflow: hidden; }
+.stage svg { display: block; width: 100%; height: auto; }
+.stage.crash { animation: shake .35s; border-color: var(--bad); }
+@keyframes shake { 20% { transform: translateX(-4px);} 40% { transform: translateX(4px);} 60% { transform: translateX(-3px);} 80% { transform: translateX(2px);} }
+.gauges { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.g { padding: 8px 10px; border-radius: 10px; background: var(--surface-2); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.g-top { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; font-size: 13px; font-weight: 700; }
+.g-top .nm { display: inline-flex; align-items: center; gap: 6px; }
+.g-top .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dot); }
+.g-top .val { font-family: var(--font-mono); font-size: 15px; }
+.g-bar { height: 6px; border-radius: 3px; background: var(--line); position: relative; overflow: hidden; }
+.g-bar i { position: absolute; inset-block: 0; left: 0; background: var(--dot); border-radius: 3px; width: 0; }
+.msg { padding: 12px 14px; border-radius: 12px; font-weight: 600; background: var(--surface-2); min-height: 48px; display: flex; align-items: center; gap: 10px; }
+.msg[data-kind="ok"] { background: color-mix(in srgb, var(--good) 18%, var(--surface)); color: var(--ink); }
+.msg[data-kind="bad"] { background: color-mix(in srgb, var(--bad) 16%, var(--surface)); }
+.msg .stars { font-size: 20px; letter-spacing: .06em; color: var(--c-finger); }
+.msg .next { margin-left: auto; }
+.hintbox { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; border: 1.5px dashed var(--line); font-size: 14px; }
+.hintbox h3 { margin: 0; font-size: 14px; font-weight: 700; }
+.hintbox ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.hintbox code { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+
+.total { display: flex; align-items: center; gap: 10px; padding: 5px 6px 5px 14px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); font-weight: 600; }
+.total b { font-family: var(--font-mono); font-size: 20px; color: var(--accent); }
+.btn.sm { padding: 6px 12px; font-size: 13px; }
+ol.prog li .t { background: none; border: 0; padding: 0; text-align: left; font: inherit; cursor: pointer; border-radius: 6px; }
+ol.prog li .t:hover { background: var(--surface-2); }
+ol.prog li.editing { border-color: var(--accent); }
+.ed { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.ed select, .ed input { padding: 6px 8px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; max-width: 100%; }
+.ed input { width: 68px; font-family: var(--font-mono); font-weight: 700; }
+.ib.ok { color: var(--good); font-weight: 700; }
+.hint-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.hint { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font-size: 14px; }
+.hint.locked { opacity: .65; }
+.hint.locked span { color: var(--ink-soft); font-size: 13px; }
+.hint.fresh { outline: 2px solid var(--accent); }
+.hint ul { margin: 0; padding-left: 18px; }
+.hint .legend { font-size: 12px; color: var(--ink-soft); }
+.note { margin-left: auto; font-size: 13px; color: var(--accent); font-weight: 700; }
+.overlay { position: fixed; inset: 0; background: rgba(10, 16, 22, .62); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
+.sheet { background: var(--surface); color: var(--ink); border-radius: 16px; border: 1.5px solid var(--line); width: min(520px, 100%); max-height: 100%; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.sheet h2 { font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0; }
+.sheet table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sheet th, .sheet td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+.sheet td.num { font-family: var(--font-mono); font-weight: 700; text-align: right; }
+.sheet td.st { color: var(--c-finger); letter-spacing: .06em; white-space: nowrap; }
+.sheet .big { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-weight: 700; }
+.sheet .big b { font-family: var(--font-mono); font-size: 34px; color: var(--accent); }
+.sheet .rank { margin: 0; color: var(--ink-soft); }
+.sheet .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 920px) {
+  .game { grid-template-columns: minmax(0, 1fr); }
+  .stage-panel { order: -1; }
+  .levels { margin-left: 0; }
+  .brand { font-size: 24px; }
+}
+@media (max-width: 520px) {
+  .gauges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lv { min-width: 0; flex: 1 1 calc(33% - 8px); }
+}
+@media (prefers-reduced-motion: reduce) { .stage.crash { animation: none; } .card { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand">로봇팔 코딩 미션<small>명령어 카드를 조립해서 로봇팔에게 일을 시켜 보세요</small></h1>
+    <nav class="levels" id="levels" aria-label="미션 선택"></nav>
+    <div class="total"><span>총점 <b id="totalScore">0</b> / 500</span><button class="btn sm" id="boardBtn" type="button">점수표</button></div>
+  </header>
+
+  <main class="game">
+    <section class="panel builder" aria-label="명령어 만들기">
+      <div>
+        <h2>명령어 만들기</h2>
+        <p class="sub">카드를 차례로 골라 문장을 완성하고 [추가]를 누르세요.</p>
+      </div>
+
+      <div class="step" id="step1">
+        <div class="step-h"><em>1</em> 어느 관절을?</div>
+        <div class="cards" id="jointCards"></div>
+      </div>
+      <div class="step" id="step2" data-locked="true">
+        <div class="step-h"><em>2</em> 어떻게 움직일까?</div>
+        <div class="cards" id="actCards"></div>
+      </div>
+      <div class="step" id="step3" data-locked="true">
+        <div class="step-h"><em>3</em> 몇 도만큼?</div>
+        <div class="cards" id="degCards"></div>
+        <label class="custom" for="degInput">직접 입력 <input id="degInput" type="number" inputmode="numeric" min="5" max="180" step="5" placeholder="65"> °</label>
+      </div>
+
+      <div class="sentence" id="sentence" aria-live="polite"></div>
+      <div style="display:flex">
+        <button class="btn primary add" id="addBtn" type="button" disabled>＋ 추가</button>
+      </div>
+
+      <hr class="divider">
+
+      <div class="prog-head">
+        <h2>내 프로그램</h2>
+        <span class="count" id="count">0줄</span>
+      </div>
+      <ol class="prog" id="prog" aria-label="명령어 목록"></ol>
+      <div class="runbar">
+        <button class="btn primary run" id="runBtn" type="button">▶ 실행</button>
+        <button class="btn" id="stepBtn" type="button">한 줄씩</button>
+        <button class="btn" id="resetBtn" type="button">↺ 처음으로</button>
+        <button class="btn" id="clearBtn" type="button">모두 지우기</button>
+        <button class="btn" id="undoBtn" type="button" disabled>↶ 이전 내용 복구</button>
+        <label class="speed" for="speed">속도
+          <select id="speed"><option value="1.6">느리게</option><option value="1" selected>보통</option><option value="0.5">빠르게</option></select>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel stage-panel" aria-label="로봇팔 작업 무대">
+      <div class="mission">
+        <h2 id="mTitle"></h2>
+        <span class="rule" id="mRule"></span>
+        <p id="mBrief"></p>
+      </div>
+      <div class="stage" id="stage"></div>
+      <div class="gauges" id="gauges" aria-label="현재 관절 각도"></div>
+      <div class="msg" id="msg" data-kind="info" role="status" aria-live="polite"></div>
+      <section class="hintbox" id="hintBox" aria-label="힌트"></section>
+    </section>
+  </main>
+</div>
+<div class="overlay" id="board" hidden role="dialog" aria-modal="true" aria-labelledby="boardTitle"><div class="sheet" id="boardSheet"></div></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 상수 ---------- */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var L1 = 185, L2 = 170, L3 = 58, FL = 36, GRAB = 24;       // 윗팔, 아랫팔, 손바닥, 손가락, 잡는 지점
+  var TABLE = 410, BASE = { x: 100, y: 340 }, VW = 760, VH = 470;
+  var HW = 14;                                                // 물건 반폭
+  var F_OBJ = 30, F_GRAB_ON = 34;                             // 물건을 감쌌을 때 손가락 각도 / 잡힘·놓침 경계
+  var LIM = { shoulder: [-30, 150], elbow: [0, 160], wrist: [-90, 120], finger: [0, 60] };
+  var INIT = { shoulder: 0, elbow: 0, wrist: 0, finger: 50 };
+  var WALL_T = 8;
+
+  var JOINTS = [
+    { key: "shoulder", name: "어깨", color: "--c-shoulder", acts: [{ k: "fwd", label: "앞으로 숙인다", sign: 1 }, { k: "back", label: "뒤로 젖힌다", sign: -1 }] },
+    { key: "elbow", name: "팔꿈치", color: "--c-elbow", acts: [{ k: "bend", label: "굽힌다", sign: 1 }, { k: "ext", label: "편다", sign: -1 }] },
+    { key: "wrist", name: "손목", color: "--c-wrist", acts: [{ k: "down", label: "아래로 꺾는다", sign: 1 }, { k: "up", label: "위로 꺾는다", sign: -1 }] },
+    { key: "finger", name: "손가락", color: "--c-finger", acts: [{ k: "open", label: "벌린다", sign: 1 }, { k: "close", label: "오므린다", sign: -1 }] }
+  ];
+  var JMAP = {}; JOINTS.forEach(function (j) { JMAP[j.key] = j; });
+  var DEGS = [5, 10, 15, 20, 30, 45, 60, 90];
+  var OBJ_LABEL = { red: "빨간", blue: "파란" };
+  var KIND_LABEL = { ball: "공", cube: "큐브" };
+
+  /* ---------- 미션 ---------- */
+  var LEVELS = [
+    { name: "물건 옮기기", brief: "빨간 공을 집어서 점선 칸 안에 내려놓으세요.",
+      objs: [{ id: "a", kind: "ball", color: "red", x: 225 }],
+      zones: [{ x1: 330, x2: 405, color: null, box: false, label: "도착" }], walls: [], stars: [14, 22] },
+    { name: "상자에 넣기", brief: "빨간 공을 상자 안에 넣으세요. 상자 벽보다 높이 들어 올려야 해요.",
+      objs: [{ id: "a", kind: "ball", color: "red", x: 225 }],
+      zones: [{ x1: 330, x2: 415, color: null, box: true, label: "상자" }], walls: [], stars: [16, 26] },
+    { name: "장애물 넘기", brief: "가운데 벽에 부딪히지 않게 공을 넘겨서 상자에 넣으세요.",
+      objs: [{ id: "a", kind: "ball", color: "red", x: 225 }],
+      zones: [{ x1: 350, x2: 440, color: null, box: true, label: "상자" }], walls: [{ x: 288, w: 16, h: 120 }], stars: [20, 32] },
+    { name: "색깔 분류", brief: "빨간 공은 빨간 상자에, 파란 큐브는 파란 상자에 넣으세요.",
+      objs: [{ id: "a", kind: "ball", color: "red", x: 215 }, { id: "b", kind: "cube", color: "blue", x: 252 }],
+      zones: [{ x1: 310, x2: 385, color: "red", box: true, label: "빨간 상자" }, { x1: 390, x2: 460, color: "blue", box: true, label: "파란 상자" }], walls: [], stars: [32, 46] },
+    { name: "분류 챌린지", brief: "벽을 넘어서 두 물건을 알맞은 상자에 분류하세요.",
+      objs: [{ id: "a", kind: "ball", color: "red", x: 205 }, { id: "b", kind: "cube", color: "blue", x: 237 }],
+      zones: [{ x1: 310, x2: 385, color: "red", box: true, label: "빨간 상자" }, { x1: 390, x2: 460, color: "blue", box: true, label: "파란 상자" }], walls: [{ x: 297, w: 16, h: 120 }], stars: [36, 52] }
+  ];
+  var LV_WALL_H = 55;
+
+  /* ---------- 상태 ---------- */
+  var levelIdx = 0;
+  var programs = LEVELS.map(function () { return []; });
+  programs[0] = [
+    { joint: "shoulder", act: "fwd", deg: 15 },
+    { joint: "elbow", act: "bend", deg: 140 },
+    { joint: "wrist", act: "down", deg: 25 }
+  ];
+  var sel = { joint: null, act: null, deg: null };
+  var pose = Object.assign({}, INIT);
+  var objs = [];            // { id, kind, color, x, y, held }
+  var held = null;
+  var pc = 0;               // 한 줄씩 실행용
+  var running = false, token = 0, stepping = false;
+  var best = {}, scores = {}, runs = LEVELS.map(function () { return 0; });
+  var hist = LEVELS.map(function () { return []; });
+  var editIdx = -1, editTmp = null, pendingNote = "";
+  try { scores = JSON.parse(localStorage.getItem("robotarm-scores2") || "{}") || {}; } catch (e) { scores = {}; }
+  try { var rr = JSON.parse(localStorage.getItem("robotarm-runs") || "[]"); if (Array.isArray(rr)) runs = LEVELS.map(function (_, i) { return +rr[i] || 0; }); } catch (e) {}
+  try { best = JSON.parse(localStorage.getItem("robotarm-stars") || "{}") || {}; } catch (e) { best = {}; }
+
+  var $ = function (id) { return document.getElementById(id); };
+  function css(name) { return "var(" + name + ")"; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function rd(v) { return Math.round(v); }
+  function dirv(deg) { var r = deg * Math.PI / 180; return [Math.sin(r), -Math.cos(r)]; }
+
+  /* ---------- 운동학 ---------- */
+  function fk(p) {
+    var f1 = p.shoulder, f2 = f1 + p.elbow, f3 = f2 + p.wrist;
+    var d1 = dirv(f1), d2 = dirv(f2), d3 = dirv(f3), dA = dirv(f3 + p.finger), dB = dirv(f3 - p.finger);
+    var E = [BASE.x + L1 * d1[0], BASE.y + L1 * d1[1]];
+    var W = [E[0] + L2 * d2[0], E[1] + L2 * d2[1]];
+    var Pe = [W[0] + L3 * d3[0], W[1] + L3 * d3[1]];
+    var G = [Pe[0] + GRAB * d3[0], Pe[1] + GRAB * d3[1]];
+    var T1 = [Pe[0] + FL * dA[0], Pe[1] + FL * dA[1]];
+    var T2 = [Pe[0] + FL * dB[0], Pe[1] + FL * dB[1]];
+    return { B: [BASE.x, BASE.y], E: E, W: W, Pe: Pe, G: G, T1: T1, T2: T2 };
+  }
+
+  /* ---------- 장애물 ---------- */
+  function levelRects(lv) {
+    var rects = [];
+    lv.walls.forEach(function (w) { rects.push({ x1: w.x - w.w / 2, x2: w.x + w.w / 2, top: TABLE - w.h, kind: "wall" }); });
+    lv.zones.forEach(function (z) {
+      if (!z.box) return;
+      rects.push({ x1: z.x1, x2: z.x1 + WALL_T, top: TABLE - LV_WALL_H, kind: "box" });
+      rects.push({ x1: z.x2 - WALL_T, x2: z.x2, top: TABLE - LV_WALL_H, kind: "box" });
+    });
+    return rects;
+  }
+  function pointHit(px, py, rects, pad) {
+    for (var i = 0; i < rects.length; i++) {
+      var r = rects[i];
+      if (px > r.x1 - pad && px < r.x2 + pad && py > r.top - pad && py < TABLE + 40) return r;
+    }
+    return null;
+  }
+  function segSamples(a, b, step) {
+    var n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step)), out = [];
+    for (var i = 0; i <= n; i++) out.push([a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]);
+    return out;
+  }
+  function collide(f, heldObj, rects) {
+    var segs = [[f.B, f.E, 9], [f.E, f.W, 8], [f.W, f.Pe, 11], [f.Pe, f.T1, 4], [f.Pe, f.T2, 4]];
+    for (var i = 0; i < segs.length; i++) {
+      var pts = segSamples(segs[i][0], segs[i][1], 6), pad = segs[i][2];
+      for (var k = 0; k < pts.length; k++) {
+        var p = pts[k];
+        if (i > 0 && p[1] + (i >= 3 ? 0 : pad * 0.6) > TABLE + 1) return { type: "table", at: p };
+        var h = pointHit(p[0], p[1], rects, pad);
+        if (h) return { type: h.kind, at: p };
+      }
+    }
+    if (heldObj) {
+      var gx = f.G[0], gy = f.G[1];
+      if (gy + HW > TABLE + 9) return { type: "table", at: [gx, gy + HW] };
+      var hh = pointHit(gx, gy, rects, HW - 1);
+      if (hh) return { type: hh.kind, at: [gx, gy] };
+    }
+    return null;
+  }
+
+  /* ---------- 장면 그리기 ---------- */
+  var stageEl = $("stage"), S = {};
+  function el(tag, attrs, parent) {
+    var n = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function buildStage() {
+    var lv = LEVELS[levelIdx];
+    stageEl.innerHTML = "";
+    var svg = el("svg", { viewBox: "0 0 " + VW + " " + VH, role: "img", "aria-label": "로봇팔 작업 무대" }, stageEl);
+    var defs = el("defs", {}, svg);
+    var pat = el("pattern", { id: "grid", width: 40, height: 40, patternUnits: "userSpaceOnUse" }, defs);
+    el("path", { d: "M40 0H0V40", fill: "none", stroke: css("--stage-grid"), "stroke-width": 1 }, pat);
+    var hz = el("pattern", { id: "hazard", width: 16, height: 16, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+    el("rect", { width: 16, height: 16, fill: css("--table") }, hz);
+    el("rect", { width: 8, height: 16, fill: css("--c-finger") }, hz);
+    el("rect", { width: VW, height: VH, fill: "url(#grid)" }, svg);
+
+    var gz = el("g", {}, svg), late = [];
+    lv.zones.forEach(function (z) {
+      var tint = z.color === "red" ? css("--obj-red") : z.color === "blue" ? css("--obj-blue") : css("--zone-line");
+      if (z.box) {
+        el("rect", { x: z.x1, y: TABLE - LV_WALL_H, width: z.x2 - z.x1, height: LV_WALL_H, fill: tint, "fill-opacity": .14 }, gz);
+        el("rect", { x: z.x1, y: TABLE - LV_WALL_H, width: WALL_T, height: LV_WALL_H, fill: tint, rx: 2 }, gz);
+        el("rect", { x: z.x2 - WALL_T, y: TABLE - LV_WALL_H, width: WALL_T, height: LV_WALL_H, fill: tint, rx: 2 }, gz);
+      } else {
+        el("rect", { x: z.x1, y: TABLE - 26, width: z.x2 - z.x1, height: 26, fill: "none", stroke: tint, "stroke-width": 2.5, "stroke-dasharray": "7 6", rx: 4 }, gz);
+      }
+      late.push(function () {
+      var zc = (z.x1 + z.x2) / 2, zh = z.box ? (z.x2 - z.x1) / 2 - WALL_T - HW : (z.x2 - z.x1) / 2, seg = zh / 3;
+      var tiers = [[-zh, -zh + seg, 50, .35], [-zh + seg, -seg, 75, .6], [-seg, seg, 100, 1], [seg, zh - seg, 75, .6], [zh - seg, zh, 50, .35]];
+      tiers.forEach(function (q) {
+        el("rect", { x: zc + q[0], y: TABLE + 4, width: q[1] - q[0], height: 9, fill: css("--good"), "fill-opacity": q[3] }, bandG);
+      });
+        var tx = el("text", { x: zc, y: TABLE + 27, "text-anchor": "middle", "font-size": 11, "font-weight": 700, fill: css("--stage-bg"), "fill-opacity": .85, "font-family": "var(--font-mono)" }, bandG);
+        tx.textContent = "100";
+      });
+      var t = el("text", { x: (z.x1 + z.x2) / 2, y: TABLE - LV_WALL_H - 10 + (z.box ? 0 : 28), "text-anchor": "middle", "font-size": 13, "font-weight": 700, fill: tint, "font-family": "var(--font-body)" }, gz);
+      t.textContent = z.label;
+    });
+    lv.walls.forEach(function (w) {
+      el("rect", { x: w.x - w.w / 2, y: TABLE - w.h, width: w.w, height: w.h, fill: "url(#hazard)", stroke: css("--table"), "stroke-width": 2 }, gz);
+    });
+
+    // 책상
+    el("rect", { x: 0, y: TABLE, width: VW, height: VH - TABLE, fill: css("--table") }, svg);
+    var tl = el("text", { x: VW - 14, y: TABLE + 26, "text-anchor": "end", "font-size": 12, fill: css("--stage-bg"), "fill-opacity": .6, "font-family": "var(--font-mono)", "font-weight": 700 }, svg);
+    tl.textContent = "TABLE";
+    var bandG = el("g", {}, svg); late.forEach(function (f) { f(); });
+
+    // 받침대
+    el("rect", { x: BASE.x - 44, y: BASE.y + 6, width: 88, height: TABLE - BASE.y - 6, rx: 6, fill: css("--metal-2") }, svg);
+    el("rect", { x: BASE.x - 58, y: TABLE - 14, width: 116, height: 14, rx: 4, fill: css("--metal") }, svg);
+
+    // 팔 (중첩 그룹)
+    var g1 = el("g", {}, svg), g2, g3, g4;
+    el("rect", { x: -10, y: -L1, width: 20, height: L1, rx: 10, fill: css("--metal") }, g1);
+    g2 = el("g", { transform: "translate(0," + (-L1) + ")" }, g1);
+    el("rect", { x: -9, y: -L2, width: 18, height: L2, rx: 9, fill: css("--metal-2") }, g2);
+    g3 = el("g", { transform: "translate(0," + (-L2) + ")" }, g2);
+    el("rect", { x: -12, y: -L3, width: 24, height: L3, rx: 7, fill: css("--metal") }, g3);
+    g4 = el("g", { transform: "translate(0," + (-L3) + ")" }, g3);
+    var fa = el("g", {}, g4), fb = el("g", {}, g4);
+    el("rect", { x: -4, y: -FL, width: 8, height: FL, rx: 3, fill: css("--c-finger") }, fa);
+    el("rect", { x: -4, y: -FL, width: 8, height: FL, rx: 3, fill: css("--c-finger") }, fb);
+    el("circle", { r: 8, fill: css("--c-finger") }, g4);
+    el("circle", { r: 15, fill: css("--c-shoulder"), stroke: css("--stage-bg"), "stroke-width": 3 }, g1);
+    el("circle", { r: 13, fill: css("--c-elbow"), stroke: css("--stage-bg"), "stroke-width": 3 }, g2);
+    el("circle", { r: 11, fill: css("--c-wrist"), stroke: css("--stage-bg"), "stroke-width": 3 }, g3);
+    S.g1 = g1; S.g2 = g2; S.g3 = g3; S.fa = fa; S.fb = fb;
+    S.og = el("g", {}, svg);
+    S.crash = el("g", {}, svg);
+    S.svg = svg;
+  }
+  function drawObj(o) {
+    var g = o.node;
+    if (!g) { g = o.node = el("g", {}, S.og);
+      var fill = o.color === "red" ? css("--obj-red") : css("--obj-blue");
+      if (o.kind === "ball") { el("circle", { r: HW, fill: fill }, g); el("circle", { cx: -4, cy: -5, r: 4, fill: "#fff", "fill-opacity": .45 }, g); }
+      else { el("rect", { x: -HW, y: -HW, width: HW * 2, height: HW * 2, rx: 3, fill: fill }, g); el("rect", { x: -HW + 4, y: -HW + 4, width: 8, height: 8, rx: 2, fill: "#fff", "fill-opacity": .35 }, g); }
+    }
+    g.setAttribute("transform", "translate(" + o.x.toFixed(1) + "," + o.y.toFixed(1) + ")");
+  }
+  function render() {
+    S.g1.setAttribute("transform", "translate(" + BASE.x + "," + BASE.y + ") rotate(" + pose.shoulder + ")");
+    S.g2.setAttribute("transform", "translate(0," + (-L1) + ") rotate(" + pose.elbow + ")");
+    S.g3.setAttribute("transform", "translate(0," + (-L2) + ") rotate(" + pose.wrist + ")");
+    S.fa.setAttribute("transform", "rotate(" + pose.finger + ")");
+    S.fb.setAttribute("transform", "rotate(" + (-pose.finger) + ")");
+    if (held) { var G = fk(pose).G; held.x = G[0]; held.y = G[1]; }
+    objs.forEach(drawObj);
+    updateGauges();
+  }
+
+  /* ---------- 게이지 ---------- */
+  function buildGauges() {
+    var box = $("gauges"); box.innerHTML = "";
+    JOINTS.forEach(function (j) {
+      var d = document.createElement("div"); d.className = "g"; d.style.setProperty("--dot", css(j.color));
+      d.innerHTML = '<div class="g-top"><span class="nm"><span class="dot"></span>' + j.name + '</span><span class="val" id="gv-' + j.key + '">0°</span></div><div class="g-bar"><i id="gb-' + j.key + '"></i></div>';
+      box.appendChild(d);
+    });
+  }
+  function updateGauges() {
+    JOINTS.forEach(function (j) {
+      var v = pose[j.key], lim = LIM[j.key];
+      $("gv-" + j.key).textContent = rd(v) + "°";
+      $("gb-" + j.key).style.width = clamp((v - lim[0]) / (lim[1] - lim[0]) * 100, 0, 100) + "%";
+    });
+  }
+
+  /* ---------- 메시지 ---------- */
+  function msg(html, kind) { var m = $("msg"); m.dataset.kind = kind || "info"; m.innerHTML = html + ((kind === "ok" || kind === "bad") && pendingNote ? '<span class="note">' + pendingNote + "</span>" : ""); if (kind === "ok" || kind === "bad") pendingNote = ""; }
+
+  /* ---------- 월드 리셋 ---------- */
+  function resetWorld() {
+    token++; running = false; stepping = false; pc = 0; held = null; editIdx = -1;
+    pose = Object.assign({}, INIT);
+    var lv = LEVELS[levelIdx];
+    buildStage();
+    objs = lv.objs.map(function (o) { return { id: o.id, kind: o.kind, color: o.color, x: o.x, y: TABLE - HW, held: false, node: null }; });
+    render();
+    markProgram(-1);
+    setBusy(false);
+  }
+
+  /* ---------- 애니메이션 ---------- */
+  function Abort() { this.abort = true; }
+  function Fail(text) { this.fail = text; }
+  function frame() { return new Promise(function (r) { requestAnimationFrame(r); }); }
+  function ease(t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function speedMul() { return parseFloat($("speed").value) || 1; }
+
+  async function tween(ms, fn, my) {
+    var t0 = performance.now();
+    for (;;) {
+      await frame();
+      if (my !== token) throw new Abort();
+      var t = clamp((performance.now() - t0) / ms, 0, 1);
+      var stop = fn(ease(t));
+      if (t >= 1 || stop === true) return;
+    }
+  }
+
+  function crashMsg(c) {
+    if (c.type === "table") return "책상에 부딪혔어요. 팔이 너무 낮게 내려갔어요.";
+    if (c.type === "wall") return "벽에 부딪혔어요. 벽보다 높이 들어 올린 뒤 옮겨 보세요.";
+    return "상자 벽에 부딪혔어요. 상자 위로 높이 들어 올린 뒤 내려놓으세요.";
+  }
+  function showCrash(at) {
+    S.crash.innerHTML = "";
+    el("circle", { cx: at[0], cy: at[1], r: 16, fill: "none", stroke: css("--bad"), "stroke-width": 4 }, S.crash);
+    el("circle", { cx: at[0], cy: at[1], r: 5, fill: css("--bad") }, S.crash);
+    stageEl.classList.remove("crash"); void stageEl.offsetWidth; stageEl.classList.add("crash");
+  }
+  function checkCrash() {
+    var f = fk(pose), c = collide(f, held, levelRects(LEVELS[levelIdx]));
+    if (c) { showCrash(c.at); throw new Fail(crashMsg(c)); }
+  }
+
+  function fallObj(o, my) {
+    var rects = levelRects(LEVELS[levelIdx]);
+    var tops = [{ x1: -1e4, x2: 1e4, top: TABLE }];
+    rects.forEach(function (r) { tops.push(r); });
+    objs.forEach(function (q) { if (q !== o && !q.held) tops.push({ x1: q.x - HW, x2: q.x + HW, top: q.y - HW }); });
+    var ground = TABLE;
+    tops.forEach(function (r) {
+      if (o.x + HW > r.x1 + 1 && o.x - HW < r.x2 - 1 && r.top >= o.y + HW - 2 && r.top < ground) ground = r.top;
+    });
+    var yEnd = ground - HW, vy = 0, last = performance.now();
+    return (async function () {
+      for (;;) {
+        await frame();
+        if (my !== token) throw new Abort();
+        var now = performance.now(), dt = Math.min(.05, (now - last) / 1000); last = now;
+        vy += 1500 * dt; o.y += vy * dt;
+        if (o.y >= yEnd) { o.y = yEnd; drawObj(o); return; }
+        drawObj(o);
+      }
+    })();
+  }
+
+  async function execCmd(c, my) {
+    var j = JMAP[c.joint], act = j.acts.filter(function (a) { return a.k === c.act; })[0];
+    var from = pose[c.joint], target = from + act.sign * c.deg, lim = LIM[c.joint];
+    if (target < lim[0] - 1e-6 || target > lim[1] + 1e-6) {
+      throw new Fail(jo(j.name, "은", "는") + " " + lim[0] + "°~" + lim[1] + "° 사이에서만 움직여요. 지금 " + rd(from) + "°라서 " + c.deg + "°를 더하거나 빼면 범위를 벗어나요.");
+    }
+    var end = target, fallP = null;
+    if (c.joint === "finger" && held && end < F_OBJ) end = F_OBJ;
+    var dur = Math.max(450, Math.abs(end - from) * 11) * speedMul();
+    await tween(dur, function (t) {
+      var v = from + (end - from) * t;
+      pose[c.joint] = v;
+      if (c.joint === "finger") {
+        if (act.sign < 0 && !held && v <= F_GRAB_ON) {
+          var G = fk(pose).G, near = null, nd = 22;
+          objs.forEach(function (o) { var d = Math.hypot(o.x - G[0], o.y - G[1]); if (!o.held && d < nd) { nd = d; near = o; } });
+          if (near) { near.held = true; held = near; pose.finger = F_OBJ; render(); return true; }
+        }
+        if (act.sign > 0 && held && v > F_GRAB_ON) {
+          var o = held; o.held = false; held = null; pose.finger = v; render(); fallP = fallObj(o, my);
+        }
+      }
+      render(); checkCrash();
+    }, my);
+    if (fallP) await fallP;
+    render(); checkCrash();
+  }
+
+  function jo(word, a, b) { var c = word.charCodeAt(word.length - 1) - 0xAC00; return word + ((c >= 0 && c % 28 !== 0) ? a : b); }
+  function evaluate(lv) {
+    if (held) return { ok: false, text: jo(OBJ_LABEL[held.color] + " " + KIND_LABEL[held.kind], "을", "를") + " 아직 손에 들고 있어요. 손가락을 벌려서 내려놓으세요." };
+    var items = [];
+    for (var i = 0; i < objs.length; i++) {
+      var o = objs[i], name = OBJ_LABEL[o.color] + " " + KIND_LABEL[o.kind];
+      var inZone = null;
+      lv.zones.forEach(function (z) {
+        var a = z.box ? z.x1 + WALL_T : z.x1, b = z.box ? z.x2 - WALL_T : z.x2;
+        if (o.x >= a && o.x <= b) inZone = z;
+      });
+      var onFloor = Math.abs(o.y - (TABLE - HW)) <= 2;
+      if (!inZone || !onFloor) {
+        if (o.y < TABLE - HW - 2) return { ok: false, text: jo(name, "이", "가") + " 상자 벽 위에 걸려 있어요. 상자 가운데 위에서 내려놓으세요." };
+        return { ok: false, text: jo(name, "이", "가") + " 아직 목표 위치에 없어요." };
+      }
+      if (inZone.color && inZone.color !== o.color) return { ok: false, text: jo(name, "이", "가") + " " + inZone.label + "에 들어갔어요. 색깔이 같은 상자에 넣어야 해요." };
+      var cx = (inZone.x1 + inZone.x2) / 2;
+      var half = inZone.box ? (inZone.x2 - inZone.x1) / 2 - WALL_T - HW : (inZone.x2 - inZone.x1) / 2;
+      var ratio = clamp(Math.abs(o.x - cx) / half, 0, 1);
+      items.push({ name: name, points: ratio <= 1 / 3 ? 100 : ratio <= 2 / 3 ? 75 : 50 });
+    }
+    var low = 100; items.forEach(function (q) { low = Math.min(low, q.points); });
+    return { ok: true, items: items, score: low };
+  }
+  function starsFor(n) {
+    var s = LEVELS[levelIdx].stars; return n <= s[0] ? 3 : n <= s[1] ? 2 : 1;
+  }
+  function allDone() { return LEVELS.every(function (_, i) { return scores[i] != null; }); }
+  function total() { var s = 0; LEVELS.forEach(function (_, i) { s += scores[i] || 0; }); return s; }
+  function saveAll() {
+    try { localStorage.setItem("robotarm-stars", JSON.stringify(best)); localStorage.setItem("robotarm-scores2", JSON.stringify(scores)); localStorage.setItem("robotarm-runs", JSON.stringify(runs)); } catch (e) {}
+  }
+  function finish() {
+    var lv = LEVELS[levelIdx], r = evaluate(lv), n = programs[levelIdx].length;
+    if (!r.ok) { msg("미션 실패. " + r.text + " [처음으로]를 눌러 고쳐 보세요.", "bad"); return; }
+    var st = starsFor(n), wasDone = allDone();
+    if (st > (best[levelIdx] || 0)) best[levelIdx] = st;
+    if (r.score > (scores[levelIdx] == null ? -1 : scores[levelIdx])) scores[levelIdx] = r.score;
+    saveAll(); renderLevels(); updateTotal();
+    var acc = r.items.length > 1 ? r.items.map(function (q) { return q.name + " " + q.points; }).join(" · ") + " 중 낮은 점수 · " : "";
+    var nextBtn = levelIdx < LEVELS.length - 1 ? '<button class="btn primary next" id="nextBtn" type="button">다음 미션 ▶</button>' : "";
+    msg('<span>미션 성공! <b>' + r.score + '점</b> <small>(' + acc + '명령 ' + n + '줄)</small></span><span class="stars" aria-label="별 ' + st + '개">' + "★".repeat(st) + "☆".repeat(3 - st) + "</span>" + nextBtn, "ok");
+    var nb = $("nextBtn"); if (nb) nb.addEventListener("click", function () { selectLevel(levelIdx + 1); });
+    if (allDone() && !wasDone) setTimeout(function () { showBoard(); }, 600);
+    else if (allDone() && levelIdx === LEVELS.length - 1) setTimeout(function () { showBoard(); }, 600);
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function showStage() {
+    var s = $("stage"), r = s.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
+    if (r.top >= 8 && r.bottom <= vh - 8) return false;
+    var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try { s.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" }); } catch (e) { s.scrollIntoView(); }
+    return true;
+  }
+  async function runAll() {
+    if (running) { token++; running = false; setBusy(false); msg("실행을 멈췄어요.", "info"); return; }
+    var prog = programs[levelIdx];
+    if (!prog.length) { msg("명령어가 없어요. 왼쪽에서 카드를 골라 문장을 만들어 보세요.", "bad"); return; }
+    var before = hintLevel(); runs[levelIdx]++; saveAll();
+    var after = hintLevel(); pendingNote = after > before ? "새 힌트가 열렸어요 (힌트 " + after + ")" : "";
+    resetWorld(); renderHints(after > before ? after : 0);
+    var my = token; running = true; setBusy(true);
+    try {
+      if (showStage()) { await sleep(500); if (my !== token) throw new Abort(); }
+      for (var i = 0; i < prog.length; i++) {
+        markProgram(i); msg((i + 1) + "번째 명령 실행 중…", "info");
+        await execCmd(prog[i], my);
+        markProgram(i, true);
+      }
+      markProgram(-1, false, true);
+      running = false; setBusy(false); finish();
+    } catch (e) {
+      if (e instanceof Abort) return;
+      running = false; setBusy(false);
+      if (e instanceof Fail) { msg(e.fail, "bad"); return; }
+      throw e;
+    }
+  }
+  async function stepOnce() {
+    if (running) return;
+    var prog = programs[levelIdx];
+    if (!prog.length) { msg("명령어가 없어요. 왼쪽에서 카드를 골라 문장을 만들어 보세요.", "bad"); return; }
+    if (pc === 0 || pc >= prog.length) resetWorld();
+    var my = token; running = true; stepping = true; setBusy(true, true);
+    try {
+      if (showStage()) { await sleep(500); if (my !== token) throw new Abort(); }
+      markProgram(pc); msg((pc + 1) + "번째 명령 실행 중…", "info");
+      await execCmd(prog[pc], my);
+      markProgram(pc, true); pc++;
+      running = false; stepping = false; setBusy(false);
+      if (pc >= prog.length) { markProgram(-1, false, true); finish(); }
+      else msg((pc) + "번째 명령까지 실행했어요. 다음 줄은 " + (pc + 1) + "번이에요.", "info");
+    } catch (e) {
+      if (e instanceof Abort) return;
+      running = false; stepping = false; setBusy(false);
+      if (e instanceof Fail) { msg(e.fail, "bad"); pc = 0; return; }
+      throw e;
+    }
+  }
+
+  /* ---------- 프로그램 목록 ---------- */
+  function sentenceHTML(c) {
+    var j = JMAP[c.joint], a = j.acts.filter(function (x) { return x.k === c.act; })[0];
+    return '<span class="dot" style="--dot:' + css(j.color) + '"></span><span>' + j.name + '를 ' + a.label + ' <span class="deg-s">' + c.deg + '°</span></span>';
+  }
+  function updateUndo() { $("undoBtn").disabled = running || !hist[levelIdx].length; }
+  function snap() {
+    var h = hist[levelIdx]; h.push(JSON.stringify(programs[levelIdx])); if (h.length > 50) h.shift(); updateUndo();
+  }
+  function undo() {
+    if (running) return;
+    var h = hist[levelIdx]; if (!h.length) return;
+    programs[levelIdx] = JSON.parse(h.pop()); editIdx = -1; programChanged();
+    msg("직전 수정을 되돌렸어요. (" + programs[levelIdx].length + "줄)", "info");
+  }
+  function actOptions(joint, cur) {
+    return JMAP[joint].acts.map(function (a) { return '<option value="' + a.k + '"' + (a.k === cur ? " selected" : "") + ">" + a.label + "</option>"; }).join("");
+  }
+  function editorHTML(i) {
+    var t = editTmp, n = i + 1;
+    return '<span class="n">' + n + '</span><span class="ed">' +
+      '<select data-f="joint" aria-label="' + n + '번 관절">' + JOINTS.map(function (j) { return '<option value="' + j.key + '"' + (j.key === t.joint ? " selected" : "") + ">" + j.name + "를</option>"; }).join("") + "</select>" +
+      '<select data-f="act" aria-label="' + n + '번 동작">' + actOptions(t.joint, t.act) + "</select>" +
+      '<input data-f="deg" type="number" min="1" max="180" step="1" value="' + t.deg + '" aria-label="' + n + '번 각도"><span>°</span></span>' +
+      '<span class="tools"><button class="ib ok" data-act="save" type="button" aria-label="저장">✔</button><button class="ib" data-act="cancel" type="button" aria-label="취소">✕</button></span>';
+  }
+  function renderProgram() {
+    var prog = programs[levelIdx], ol = $("prog");
+    ol.innerHTML = "";
+    $("count").textContent = prog.length + "줄";
+    updateUndo();
+    if (!prog.length) {
+      var e = document.createElement("li"); e.className = "empty"; e.style.display = "block"; e.textContent = "아직 명령어가 없어요. 위에서 카드를 골라 첫 줄을 만들어 보세요."; ol.appendChild(e); return;
+    }
+    prog.forEach(function (c, i) {
+      var li = document.createElement("li"); li.dataset.i = i;
+      if (i === editIdx && editTmp) { li.className = "editing"; li.innerHTML = editorHTML(i); }
+      else {
+        li.innerHTML = '<span class="n">' + (i + 1) + '</span><button class="t" type="button" data-act="edit" aria-label="' + (i + 1) + '번 명령 수정">' + sentenceHTML(c) + '</button><span class="tools">' +
+          '<button class="ib" data-act="edit" type="button" aria-label="' + (i + 1) + '번 수정" title="수정">✎</button>' +
+          '<button class="ib" data-act="up" type="button" aria-label="' + (i + 1) + '번 위로" ' + (i === 0 ? "disabled" : "") + '>↑</button>' +
+          '<button class="ib" data-act="down" type="button" aria-label="' + (i + 1) + '번 아래로" ' + (i === prog.length - 1 ? "disabled" : "") + '>↓</button>' +
+          '<button class="ib" data-act="del" type="button" aria-label="' + (i + 1) + '번 삭제">✕</button></span>';
+      }
+      ol.appendChild(li);
+    });
+  }
+  function markProgram(idx, done, all) {
+    var items = $("prog").querySelectorAll("li[data-i]");
+    items.forEach(function (li) {
+      var i = +li.dataset.i;
+      li.classList.toggle("run", i === idx && !done);
+      li.classList.toggle("done", all ? true : (idx >= 0 && i < idx) || (done && i === idx));
+    });
+  }
+  function programChanged() { pc = 0; renderProgram(); }
+  function saveEdit() {
+    var p = programs[levelIdx], d = parseInt(editTmp.deg, 10);
+    if (!(d >= 1 && d <= 180)) { msg("각도는 1~180 사이 숫자로 입력하세요.", "bad"); return; }
+    editTmp.deg = d; snap(); p[editIdx] = { joint: editTmp.joint, act: editTmp.act, deg: d };
+    var n = editIdx + 1; editIdx = -1; editTmp = null; programChanged(); msg(n + "번 명령을 고쳤어요. 마음이 바뀌면 [이전 내용 복구]를 누르세요.", "info");
+  }
+  $("prog").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]"); if (!b || running) return;
+    var i = +b.closest("li").dataset.i, p = programs[levelIdx], a = b.dataset.act;
+    if (a === "edit") { editIdx = i; editTmp = Object.assign({}, p[i]); renderProgram(); var inp = $("prog").querySelector("select[data-f=joint]"); if (inp) inp.focus(); return; }
+    if (a === "cancel") { editIdx = -1; editTmp = null; renderProgram(); return; }
+    if (a === "save") { saveEdit(); return; }
+    if (a === "del") { snap(); p.splice(i, 1); }
+    else if (a === "up" && i > 0) { snap(); var t = p[i]; p[i] = p[i - 1]; p[i - 1] = t; }
+    else if (a === "down" && i < p.length - 1) { snap(); var t2 = p[i]; p[i] = p[i + 1]; p[i + 1] = t2; }
+    else return;
+    editIdx = -1; editTmp = null; programChanged();
+  });
+  $("prog").addEventListener("change", function (e) {
+    var f = e.target.dataset.f; if (!f || editIdx < 0 || !editTmp) return;
+    if (f === "joint") { editTmp.joint = e.target.value; editTmp.act = JMAP[editTmp.joint].acts[0].k; renderProgram(); var s = $("prog").querySelector("select[data-f=act]"); if (s) s.focus(); }
+    else if (f === "act") editTmp.act = e.target.value;
+    else if (f === "deg") editTmp.deg = e.target.value;
+  });
+  $("prog").addEventListener("input", function (e) { if (e.target.dataset.f === "deg" && editTmp) editTmp.deg = e.target.value; });
+  $("prog").addEventListener("keydown", function (e) {
+    if (editIdx < 0) return;
+    if (e.key === "Enter" && e.target.dataset.f) { e.preventDefault(); if (e.target.dataset.f === "deg") editTmp.deg = e.target.value; saveEdit(); }
+    if (e.key === "Escape") { editIdx = -1; editTmp = null; renderProgram(); }
+  });
+
+  /* ---------- 빌더 ---------- */
+  function mkCard(label, pressed, onClick, dotColor, cls) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "card" + (cls ? " " + cls : "");
+    b.setAttribute("aria-pressed", pressed ? "true" : "false");
+    b.innerHTML = (dotColor ? '<span class="dot" style="--dot:' + css(dotColor) + '"></span>' : "") + label;
+    b.addEventListener("click", onClick); return b;
+  }
+  function renderBuilder() {
+    var jc = $("jointCards"); jc.innerHTML = "";
+    JOINTS.forEach(function (j) {
+      jc.appendChild(mkCard(j.name + "를", sel.joint === j.key, function () {
+        if (sel.joint !== j.key) { sel.joint = j.key; sel.act = null; }
+        renderBuilder();
+      }, j.color));
+    });
+    var ac = $("actCards"); ac.innerHTML = "";
+    $("step2").dataset.locked = sel.joint ? "false" : "true";
+    if (sel.joint) JMAP[sel.joint].acts.forEach(function (a) {
+      ac.appendChild(mkCard(a.label, sel.act === a.k, function () { sel.act = a.k; renderBuilder(); }));
+    });
+    var dc = $("degCards"); dc.innerHTML = "";
+    $("step3").dataset.locked = sel.act ? "false" : "true";
+    DEGS.forEach(function (d) {
+      dc.appendChild(mkCard(d + "°", sel.deg === d, function () { sel.deg = d; $("degInput").value = ""; renderBuilder(); }, null, "deg"));
+    });
+    var s = $("sentence"), j = sel.joint ? JMAP[sel.joint] : null, a = j && sel.act ? j.acts.filter(function (x) { return x.k === sel.act; })[0] : null;
+    s.innerHTML =
+      '<span class="slot">' + (j ? j.name + "를" : '<span class="blank">관절</span>를') + "</span>" +
+      '<span class="slot">' + (a ? a.label : '<span class="blank">동작</span>') + "</span>" +
+      '<span class="slot deg-s">' + (sel.deg ? sel.deg + "°" : '<span class="blank">각도</span>') + "</span>";
+    $("addBtn").disabled = !(sel.joint && sel.act && sel.deg);
+  }
+  $("degInput").addEventListener("input", function () {
+    var v = parseInt(this.value, 10);
+    if (isFinite(v) && v >= 1 && v <= 180) sel.deg = v; else if (!this.value) sel.deg = null;
+    renderBuilder();
+  });
+  $("addBtn").addEventListener("click", function () {
+    if (running || !(sel.joint && sel.act && sel.deg)) return;
+    snap();
+    programs[levelIdx].push({ joint: sel.joint, act: sel.act, deg: sel.deg });
+    programChanged();
+    var ol = $("prog"); ol.scrollTop = ol.scrollHeight;
+    sel.act = null; sel.deg = null; $("degInput").value = "";
+    renderBuilder();
+  });
+
+  /* ---------- 조작 버튼 ---------- */
+  function setBusy(on, step) {
+    $("runBtn").textContent = on && !step ? "■ 멈춤" : "▶ 실행";
+    $("runBtn").disabled = !!step && on;
+    ["stepBtn", "addBtn", "clearBtn"].forEach(function (id) { $(id).disabled = on || (id === "addBtn" && !(sel.joint && sel.act && sel.deg)); });
+    $("prog").querySelectorAll(".ib, .t").forEach(function (b) { if (on) b.disabled = true; });
+    if (!on) renderProgram(); else updateUndo();
+  }
+  $("runBtn").addEventListener("click", runAll);
+  $("stepBtn").addEventListener("click", stepOnce);
+  $("undoBtn").addEventListener("click", undo);
+  $("resetBtn").addEventListener("click", function () { resetWorld(); msg("처음 자세로 돌아왔어요. 명령어를 고쳐서 다시 실행해 보세요.", "info"); });
+  $("clearBtn").addEventListener("click", function () {
+    if (running || !programs[levelIdx].length) return;
+    snap(); programs[levelIdx] = []; programChanged(); resetWorld();
+    msg("프로그램을 모두 지웠어요. [이전 내용 복구]로 되돌릴 수 있어요.", "info");
+  });
+
+  /* ---------- 힌트 (역기구학을 5° 단위로 탐색, 실행 횟수로 공개) ---------- */
+  var HINT_AT = [10, 20, 30];
+  function hintLevel() { var n = runs[levelIdx]; return n >= HINT_AT[2] ? 3 : n >= HINT_AT[1] ? 2 : n >= HINT_AT[0] ? 1 : 0; }
+  function solve(gx, gy) {
+    var bst = null;
+    for (var a1 = LIM.shoulder[0]; a1 <= LIM.shoulder[1]; a1 += 5) {
+      for (var a2 = 0; a2 <= LIM.elbow[1]; a2 += 5) {
+        var a3 = 180 - a1 - a2;
+        if (a3 < LIM.wrist[0] || a3 > LIM.wrist[1]) continue;
+        var G = fk({ shoulder: a1, elbow: a2, wrist: a3, finger: 50 }).G, d = Math.hypot(G[0] - gx, G[1] - gy);
+        if (!bst || d < bst.d) bst = { a1: a1, a2: a2, a3: a3, d: d };
+      }
+    }
+    return bst;
+  }
+  function poseText(p) { return "어깨 <code>" + p.a1 + "°</code> · 팔꿈치 <code>" + p.a2 + "°</code> · 손목 <code>" + p.a3 + "°</code>"; }
+  function deltaText(a, b) {
+    var out = [];
+    [["a1", "어깨"], ["a2", "팔꿈치"], ["a3", "손목"]].forEach(function (k) {
+      var d = b[k[0]] - a[k[0]];
+      if (d) out.push(k[1] + " <code>" + (d > 0 ? "+" : "−") + Math.abs(d) + "°</code>");
+    });
+    return out.length ? out.join(" · ") : "그대로";
+  }
+  function hintRows() {
+    var lv = LEVELS[levelIdx];
+    return lv.objs.map(function (o) {
+      var z = lv.zones.filter(function (q) { return !q.color || q.color === o.color; })[0], cx = (z.x1 + z.x2) / 2;
+      return { name: OBJ_LABEL[o.color] + " " + KIND_LABEL[o.kind], pick: solve(o.x, TABLE - HW), lift: solve(o.x, TABLE - HW - 70),
+        over: lv.walls.length ? solve(lv.walls[0].x, TABLE - lv.walls[0].h - 90) : null, drop: solve(cx, TABLE - LV_WALL_H - 50) };
+    });
+  }
+  function renderHints(fresh) {
+    var box = $("hintBox"), n = runs[levelIdx], lvl = hintLevel(), rows = hintRows(), next = lvl < 3 ? HINT_AT[lvl] : 0;
+    var titles = ["집는 자세", "내려놓는 자세", "자세 사이를 움직이는 양"];
+    var bodies = [
+      function () { return "<ul>" + rows.map(function (r) { return "<li><b>" + r.name + "</b> " + poseText(r.pick) + "</li>"; }).join("") + '</ul><span class="legend">손가락을 오므리기 전에 만들 자세예요. 지금 각도는 아래 관절 표시에서 확인하세요.</span>'; },
+      function () { return "<ul>" + rows.map(function (r) { return "<li><b>" + r.name + "</b> " + poseText(r.drop) + (r.over ? "<br>벽 넘는 자세 " + poseText(r.over) : "") + "</li>"; }).join("") + '</ul><span class="legend">손가락을 벌리기 전에 만들 자세예요.</span>'; },
+      function () {
+        var cur = { a1: 0, a2: 0, a3: 0 }, html = "<ul>";
+        rows.forEach(function (r) {
+          var steps = [["집는 자세로", r.pick, " → 손가락 오므리기"], ["들어 올리기", r.lift, ""]];
+          if (r.over) steps.push(["벽 위로", r.over, ""]);
+          steps.push(["상자 위로", r.drop, " → 손가락 벌리기"]);
+          html += "<li><b>" + r.name + "</b>";
+          steps.forEach(function (s, i) { html += "<br>" + (i + 1) + ". " + s[0] + " " + deltaText(cur, s[1]) + s[2]; cur = s[1]; });
+          html += "</li>";
+        });
+        return html + '</ul><span class="legend">+ 는 숙임·굽힘·아래로 꺾기, − 는 반대 방향이에요. 관절은 한 줄에 하나씩 움직이니 책상과 벽에 부딪히지 않는 순서를 찾아 보세요.</span>';
+      }
+    ];
+    var out = '<div class="hint-head"><h3>힌트</h3><span class="count">이 미션 ' + n + '번 실행' + (next ? " · 다음 힌트까지 " + (next - n) + "번" : " · 모두 공개됨") + "</span></div>";
+    for (var i = 0; i < 3; i++) {
+      if (i < lvl) out += '<div class="hint' + (fresh === i + 1 ? " fresh" : "") + '"><b>힌트 ' + (i + 1) + " · " + titles[i] + "</b>" + bodies[i]() + "</div>";
+      else out += '<div class="hint locked"><b>힌트 ' + (i + 1) + "</b><span>▶ 실행을 " + HINT_AT[i] + "번 하면 열려요</span></div>";
+    }
+    box.innerHTML = out;
+  }
+
+  /* ---------- 점수 · 미션 선택 ---------- */
+  function updateTotal() { $("totalScore").textContent = total(); }
+  function renderLevels() {
+    var nav = $("levels"); nav.innerHTML = "";
+    LEVELS.forEach(function (lv, i) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "lv"; b.setAttribute("aria-current", i === levelIdx ? "true" : "false");
+      var st = best[i] || 0, sc = scores[i];
+      b.innerHTML = "<b>MISSION " + (i + 1) + "</b><span>" + lv.name + "</span><i>" + (sc != null ? "★".repeat(st) + "☆".repeat(3 - st) + " " + sc + "점" : "") + "</i>";
+      b.addEventListener("click", function () { if (!running) selectLevel(i); });
+      nav.appendChild(b);
+    });
+  }
+  var resetArmed = false;
+  function rankText(s) { return s >= 450 ? "로봇팔 마스터" : s >= 380 ? "숙련 로봇 엔지니어" : s >= 300 ? "견습 로봇 엔지니어" : "로봇팔 입문자"; }
+  function showBoard() {
+    var done = allDone(), sheet = $("boardSheet");
+    var rows = LEVELS.map(function (lv, i) {
+      var sc = scores[i], st = best[i] || 0;
+      return "<tr><td>미션 " + (i + 1) + "</td><td>" + lv.name + '</td><td class="st">' + (sc != null ? "★".repeat(st) + "☆".repeat(3 - st) : "") + '</td><td class="num">' + (sc != null ? sc + "점" : "—") + "</td></tr>";
+    }).join("");
+    sheet.innerHTML = '<h2 id="boardTitle">' + (done ? "5단계 모두 완료!" : "점수표") + "</h2>" +
+      "<table><thead><tr><th>단계</th><th>미션</th><th>별</th><th style=\"text-align:right\">점수</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+      '<div class="big"><span>총점</span><span><b>' + total() + "</b> / 500</span></div>" +
+      (done ? '<p class="rank">' + rankText(total()) + " · 75점이나 50점인 미션은 가운데 칸에 놓으면 100점을 받을 수 있어요.</p>" : '<p class="rank">' + (5 - LEVELS.filter(function (_, i) { return scores[i] != null; }).length) + "개 미션을 더 클리어하면 최종 총점이 나와요.</p>") +
+      '<div class="actions"><button class="btn primary" id="boardClose" type="button">닫기</button><button class="btn" id="boardReset" type="button">기록 지우기</button></div>';
+    resetArmed = false;
+    $("board").hidden = false;
+    $("boardClose").focus();
+    $("boardClose").addEventListener("click", hideBoard);
+    $("boardReset").addEventListener("click", function () {
+      if (!resetArmed) { resetArmed = true; this.textContent = "한 번 더 누르면 지워져요"; return; }
+      scores = {}; best = {}; saveAll(); renderLevels(); updateTotal(); showBoard();
+    });
+  }
+  function hideBoard() { $("board").hidden = true; }
+  $("boardBtn").addEventListener("click", showBoard);
+  $("board").addEventListener("click", function (e) { if (e.target === this) hideBoard(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("board").hidden) hideBoard(); });
+
+  function selectLevel(i) {
+    levelIdx = i; sel = { joint: null, act: null, deg: null }; $("degInput").value = ""; editIdx = -1; editTmp = null; pendingNote = "";
+    var lv = LEVELS[i];
+    $("mTitle").textContent = "미션 " + (i + 1) + ". " + lv.name;
+    $("mBrief").textContent = lv.brief;
+    $("mRule").textContent = "★★★ " + lv.stars[0] + "줄 이하 · ★★ " + lv.stars[1] + "줄 이하 · 가운데 100 · 중간 75 · 가장자리 50점";
+    renderLevels(); renderBuilder(); resetWorld(); renderProgram(); renderHints(0); updateTotal();
+    msg(i === 0 && programs[0].length === 3 ? "예시 명령어 3줄이 들어 있어요. 줄을 눌러 고칠 수 있고, 이어서 손가락을 오므려 공을 집어 보세요." : "명령어를 만들고 ▶ 실행을 누르세요. 프로그램의 줄을 누르면 바로 고칠 수 있어요.", "info");
+  }
+
+  buildGauges();
+  selectLevel(0);
+
+  // 수업 확인용 내부 접근점
+  window.__robot = { fk: fk, collide: collide, levelRects: levelRects, LEVELS: LEVELS, solve: solve, programs: programs, selectLevel: selectLevel,
+    runAll: runAll, runs: function () { return runs; }, scores: function () { return scores; }, hintLevel: hintLevel, pose: function () { return pose; }, objs: function () { return objs; }, setSpeed: function (v) { $("speed").value = v; }, msgText: function () { return $("msg").textContent; },
+    renderProgram: renderProgram };
+})();
+</script>
+
+</body></html>
